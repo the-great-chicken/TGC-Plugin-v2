@@ -81,9 +81,25 @@ public class BrushApplier {
 	@SuppressWarnings("deprecation")
 	public static boolean applyBrush (ABrush aBrush, org.bukkit.Location center) {
 		Player opPlayer = null;
-		for (Player player : PluginLoader.BUKKIT_SERVER.getOnlinePlayers())
-			if (player.isOp())
+		for (Player player : PluginLoader.BUKKIT_SERVER.getOnlinePlayers()) {
+			if (!player.isOp()) continue ;
+			
+			boolean replace = opPlayer == null;
+			
+			if (!replace) {
+				if (opPlayer.getWorld() != center.getWorld())
+					replace = true;
+				else if (player.getWorld() == center.getWorld()) {
+					double distance1 = opPlayer.getLocation().distance(center);
+					double distance2 =   player.getLocation().distance(center);
+					
+					replace = distance2 < distance1;
+				}
+			}
+			
+			if (replace)
 				opPlayer = player;
+		}
 		if (opPlayer == null) return false;
 		
 		if (center == null) return false;

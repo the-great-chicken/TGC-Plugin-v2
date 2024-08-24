@@ -124,7 +124,7 @@ public class GlowManager {
 	}
 	public static boolean useGlow (Player player) {
 		if (!USE_GLOW_ENABLED) {
-			player.sendMessage("La boussole est désactivée");
+			player.sendMessage(ChatColor.RED + "Vous ne pouvez pas " + ChatColor.AQUA + "" + ChatColor.BOLD + "traquer" + ChatColor.RESET + "" + ChatColor.RED + " les poulets actuellement.");
 			return false;
 		}
 		if (isInSoftCooldown(player)) return false;

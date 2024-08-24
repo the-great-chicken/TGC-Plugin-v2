@@ -1,0 +1,37 @@
+main: com.thegreatchicken.TGCPlugin.PluginLoader
+name: TGCPlugin
+description: Handle TGC-PVP Related systems
+version: 1.20.2
+api-version: 1.13
+depend: [ ProtocolLib, CommandHook, FastAsyncWorldEdit ]
+commands:
+   usewarp:
+      description: Use a warp
+      usage: /usewarp <name>
+   createwarp:
+      description: Create a warp
+      usage: /createwarp <name> <worldname> <x> <y> <z>
+   removewarp:
+      description: Remove a warp
+      usage: /removewarp <name>
+   statuswarp:
+      description: Set the status of a warp
+      usage: /statuswarp <name> <status { enabled, disabled }>
+   listwarp:
+      description: List existing warps
+      usage: /listwarp
+   useglow:
+      description: Make other players in range glow
+      usage: /useglow
+   glow:
+      description: Make one player glow
+      usage: /glow <player> <duration>
+   targetglow:
+      description: Make one player glow on a client
+      usage: /targetglow <client> <player>
+   removeglow:
+      description: Remove the glow from a player
+      usage: /removeglow <player>
+   webrush:
+      description: Apply a World Edit Brush to a specific location
+      usage: /webrush <x> <y> <z> <name> [...args]
