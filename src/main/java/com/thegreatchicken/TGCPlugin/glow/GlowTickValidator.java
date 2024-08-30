@@ -2,9 +2,16 @@ package com.thegreatchicken.TGCPlugin.glow;
 
 import java.util.ArrayList;
 
-import org.bukkit.ChatColor;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.scores.PlayerTeam;
 
 import com.thegreatchicken.TGCPlugin.PluginLoader;
+import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R1.scoreboard.CraftScoreboard;
+import org.bukkit.entity.Player;
+
+import static net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket.createPlayerPacket;
 
 public class GlowTickValidator implements Runnable {
 
@@ -28,6 +35,15 @@ public class GlowTickValidator implements Runnable {
 				
 				to_remove.add(action);
 				PluginLoader.glowingEntities.unsetGlowing(action.entity, action.client);
+
+				// send join team if is in it
+				String name =  action.entity.getUniqueId().toString();
+				if (action.entity instanceof Player) {
+					name = action.entity.getName();
+				}
+				PlayerTeam team =((CraftScoreboard) action.client.getScoreboard()).getHandle().getPlayersTeam(name);
+				if (team != null)
+					sendJoinTeamPacket(action.client,team, name);
 			}
 			
 			for (GlowAction action : to_remove)
@@ -39,4 +55,8 @@ public class GlowTickValidator implements Runnable {
 		this.runLater();
 	}
 
+	private void sendJoinTeamPacket(Player player1, PlayerTeam team, String entity) {
+		ServerGamePacketListenerImpl ps = ((CraftPlayer) player1).getHandle().connection;
+		ps.send(createPlayerPacket(team,entity,ClientboundSetPlayerTeamPacket.Action.ADD));
+	}
 }
