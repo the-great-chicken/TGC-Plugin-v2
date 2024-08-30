@@ -2,27 +2,21 @@ package com.thegreatchicken.TGCPlugin.listeners;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.bitbucket._newage.commandhook.CommandBlockListener;
-import org.bitbucket._newage.commandhook.mapping.NmsMappingSelector;
-import org.bitbucket._newage.commandhook.mapping.NmsV1_20_R1;
-import org.bitbucket._newage.commandhook.mapping.api.IMapping;
+import org.bukkit.Bukkit;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 
 import com.thegreatchicken.TGCPlugin.PluginLoader;
 import com.thegreatchicken.TGCPlugin.inventory.InventoryManager;
 
 public class ClearPreprocessor implements Listener {
-	
-	public static IMapping mapping;
 
 	public boolean isClearCommand (String label) {
 		if (label.length() != 0 && label.charAt(0) == '/')
@@ -35,7 +29,7 @@ public class ClearPreprocessor implements Listener {
 	public static List<Entity> get (BlockCommandSender sender, String selector) {
 		Player byName = PluginLoader.BUKKIT_SERVER.getPlayer(selector);
 		if (byName == null)
-			return mapping.getEntitiesFromSelector(selector, sender.getBlock());
+			return Bukkit.selectEntities(sender, selector);
 	
 		ArrayList<Entity> array = new ArrayList<>();
 		array.add(byName);
@@ -44,7 +38,27 @@ public class ClearPreprocessor implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)	
+	public void onCommandDispatch (PlayerCommandPreprocessEvent event) {
+		System.out.println("Intercepted command " + event.getMessage());
+		System.out.println("Sender " + event.getPlayer());
+		if (!(event.getPlayer() instanceof BlockCommandSender)) return ;
+		
+		String command = event.getMessage();
+        String[] words = command.split(" ");
+        if (!isClearCommand(words[0])) return ;
+        
+        if (words.length != 1) {
+			
+
+            event.setCancelled(true);
+			event.setMessage("");
+			return ;
+        }
+	}
+	@EventHandler(priority = EventPriority.HIGHEST)	
     public void onCommandBlockDispatch(ServerCommandEvent event) {
+		System.out.println("Intercepted command " + event.getCommand());
+		System.out.println("Sender " + event.getSender());
 		if (!(event.getSender() instanceof BlockCommandSender)) return ;
 		
 		BlockCommandSender sender = (BlockCommandSender) event.getSender();
@@ -66,6 +80,7 @@ public class ClearPreprocessor implements Listener {
         	if (entity == null || (!(entity instanceof Player))) continue ;
         	
         	Player player = (Player) entity;
+			System.out.println("Applying clear to " + player.getName());
         	
         	InventoryManager.getMaintainerOrDefault(player)
         					.onClear(player);
@@ -74,21 +89,5 @@ public class ClearPreprocessor implements Listener {
         event.setCancelled(true);
         event.setCommand  ("");
     }
-	
-	public ClearPreprocessor () {
-		final Pattern p = Pattern.compile("(v\\d+_\\d+_\\w+)");
-		final Matcher m = p.matcher(PluginLoader.BUKKIT_SERVER.getClass().toString());
-		
-		String version;
-		if(m.find()) {
-			version = m.group();
-			System.out.println("NMS package found: "+version);
-			
-			mapping = NmsMappingSelector.fromNmsVersion(version);
-		} else {
-			System.out.println("Unable to obtain NMS package");
-			mapping = null;
-		}
-	}
 	
 }

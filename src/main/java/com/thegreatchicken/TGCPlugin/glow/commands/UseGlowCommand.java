@@ -1,5 +1,6 @@
 package com.thegreatchicken.TGCPlugin.glow.commands;
 
+import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -11,7 +12,6 @@ public class UseGlowCommand implements CommandExecutor {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		if (!(sender instanceof Player)) return false;
 		if (args.length == 1) {
 			if (sender.isOp() && args[0].equals("toggle")) {
 				GlowManager.USE_GLOW_ENABLED = !GlowManager.USE_GLOW_ENABLED;
@@ -20,6 +20,8 @@ public class UseGlowCommand implements CommandExecutor {
 				return false;
 			}
 		}
+
+		if (!(sender instanceof Player)) return true;
 		
 		GlowManager.useGlow((Player) sender);
 		

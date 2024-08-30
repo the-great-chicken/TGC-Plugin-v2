@@ -7,9 +7,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerChangedMainHandEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 
 import com.thegreatchicken.TGCPlugin.inventory.maintainers.LobbyInventory;
 import com.thegreatchicken.TGCPlugin.inventory.maintainers.PvpInventory;
@@ -68,6 +70,12 @@ public class InventoryManager {
 		
 		if (maintainer == null) return ;
 		maintainer.onPlayerUse(event);
+	}
+	public static void onHandSwitch (PlayerSwapHandItemsEvent event) {
+		InventoryMaintainer maintainer = getMaintainer(event.getPlayer());
+		
+		if (maintainer == null) return ;
+		maintainer.onHandSwitch(event);
 	}
 	
 }

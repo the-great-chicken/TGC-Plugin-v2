@@ -6,9 +6,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerChangedMainHandEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -45,6 +47,16 @@ public class LobbyInventory extends InventoryMaintainer {
 		   .runLater();
 	}
 
+	@EventHandler
+	public void onItemSwap(PlayerSwapHandItemsEvent event) {
+		Player player = event.getPlayer();
+		if (player.getInventory().getItem(4).getType() == Material.DRAGON_BREATH
+		 && player.getInventory().getItem(4).getItemMeta().getDisplayName().equals(
+			ChatColor.RESET + "" + ChatColor.AQUA + "Se téléporter dans l'" + ChatColor.GOLD + "" + ChatColor.BOLD + "Arène"
+		 )) return ;
+
+		event.setCancelled(true);
+	}
 	public void onLoad (Player player) {
 		ItemStack item = new ItemStack(Material.COMPASS, 1);
 		ItemMeta  meta = item.getItemMeta();

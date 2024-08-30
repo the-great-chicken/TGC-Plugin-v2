@@ -5,9 +5,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerChangedMainHandEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 
 public class InventoryMaintainer implements Listener {
 	
@@ -21,7 +23,9 @@ public class InventoryMaintainer implements Listener {
 	public void onDrag (InventoryDragEvent event) {  }
 	@EventHandler
 	public void onPlayerUse(PlayerInteractEvent event) {  }
-	
+	@EventHandler
+	public void onHandSwitch (PlayerSwapHandItemsEvent event) {  }
+
 	public void onLoad (Player player) {  }
 	public void onTick (Player player) {  }
 	public void onClear (Player player) {

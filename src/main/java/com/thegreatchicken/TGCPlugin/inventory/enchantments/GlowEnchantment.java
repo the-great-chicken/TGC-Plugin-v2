@@ -3,6 +3,7 @@ package com.thegreatchicken.TGCPlugin.inventory.enchantments;
 import java.lang.reflect.Field;
 
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry.SimpleRegistry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.inventory.ItemStack;
@@ -22,7 +23,8 @@ public class GlowEnchantment extends Enchantment {
         }
 		try {
 			GlowEnchantment glow = new GlowEnchantment();
-            Enchantment.registerEnchantment(glow);
+            
+			System.out.println(org.bukkit.Registry.ENCHANTMENT);
         }
         catch (IllegalArgumentException e){
         }
@@ -33,7 +35,7 @@ public class GlowEnchantment extends Enchantment {
 
 	public static final NamespacedKey KEY = new NamespacedKey(PluginLoader.PLUGIN, "glow_enchant");
 	  public GlowEnchantment() {
-	      super(KEY);
+	      super();
 	  }
 
 	  @Override
@@ -74,6 +76,16 @@ public class GlowEnchantment extends Enchantment {
 	@Override
 	public boolean isCursed() {
 		return false;
+	}
+
+	@Override
+	public NamespacedKey getKey() {
+		return KEY;
+	}
+
+	@Override
+	public String getTranslationKey() {
+		return KEY.getKey();
 	}
 
 }
