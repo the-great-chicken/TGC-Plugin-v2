@@ -17,6 +17,7 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.PlayerInventory;
 
 import com.thegreatchicken.TGCPlugin.glow.GlowManager;
 import com.thegreatchicken.TGCPlugin.inventory.InventoryMaintainer;
@@ -35,6 +36,7 @@ public class PvpInventory extends InventoryMaintainer {
 	@EventHandler
 	public void onChange (InventoryClickEvent event) {
 		if (event.getSlot() != 8) return ;
+		if (!(event.getInventory() instanceof PlayerInventory)) return ;
 		
 		event.setCancelled(true);
 		event.getWhoClicked().closeInventory();
@@ -42,6 +44,7 @@ public class PvpInventory extends InventoryMaintainer {
 	@EventHandler
 	public void onDrag (InventoryDragEvent event) {
 		Set<Integer> slots = event.getInventorySlots();
+		if (!(event.getInventory() instanceof PlayerInventory)) return ;
 		if (!slots.contains(8)) return ;
 		
 		event.setCancelled(true);
