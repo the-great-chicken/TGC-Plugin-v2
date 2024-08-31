@@ -5,18 +5,27 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
+import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R1.scoreboard.CraftScoreboard;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import com.thegreatchicken.TGCPlugin.PluginLoader;
+import com.thegreatchicken.TGCPlugin.glow.containers.GlowingMaintainer;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.scores.PlayerTeam;
+
+import static net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket.createPlayerPacket;
 
 public class GlowManager {
 
@@ -27,14 +36,6 @@ public class GlowManager {
 	
 	public static final String GLOW_FILE = "plugins/tgc/glow.txt";
 	
-	public static ArrayList<GlowAction> pendingActions = new ArrayList<GlowAction>();
-	
-	public static void show (Player client) {
-		PluginLoader.info("=== GLOW_ACTIONS " + client.getName() + " ===");
-		
-		for (GlowAction action : pendingActions)
-			PluginLoader.info("client(" + action.client.getName() + ") << glow(" + action.entity.getName() + ", " + (action.endTime - System.currentTimeMillis()) + "ms);");
-	}
 	public static void init () {
 		File file = new File(GLOW_FILE);
 		if (!file.exists()) {
@@ -70,17 +71,6 @@ public class GlowManager {
 			return ;
 		}
 	}
-	public static void removeClosed () {
-		ArrayList<GlowAction> toRemove = new ArrayList<>();
-		
-		long time = System.currentTimeMillis();
-		for (GlowAction action : pendingActions)
-			if (time > action.endTime)
-				toRemove.add(action);
-		
-		for (GlowAction action : toRemove)
-			pendingActions.remove(action);
-	}
 	
 	public static void addGlow (Player client, LivingEntity entity, String color) {
 		setGlow(client, entity, color, (byte) 0x40);
@@ -92,15 +82,9 @@ public class GlowManager {
 			e.printStackTrace();
 		}
 	}
-	public static void sendPotionEffect (Player client, Player entity, int duration, String color) {
-		GlowAction action = new GlowAction(client, entity, color, duration * 1000 + System.currentTimeMillis());
-		pendingActions.add(action);
-
-		addGlow(client, entity, color);
-	}
 	
-	public static HashMap<Player, Long> glowCooldown = new HashMap();
-	public static HashMap<Player, Long> softCooldown = new HashMap();
+	public static HashMap<Player, Long> glowCooldown = new HashMap<>();
+	public static HashMap<Player, Long> softCooldown = new HashMap<>();
 	public static long getVisibleCooldown (Player player) {
 		long cooldownEnd = glowCooldown.getOrDefault(player, 0l);
 		
@@ -156,9 +140,40 @@ public class GlowManager {
 		}
 		
 		for (Player other : glowingPlayers)
-			sendPotionEffect(player, other, GLOWING_DURATION, "WHITE");
+			GlowingMaintainer.instance().addGlow(
+				other, 
+				List.of(player), 
+				"WHITE", 
+				GLOWING_DURATION
+			);
 		
 		return true;
+	}
+
+	public static void addGlow (Player client, Entity entity) {
+		try {
+			PluginLoader.glowingEntities.setGlowing(entity, client);
+		} catch (ReflectiveOperationException exception) {
+
+		}
+	}
+	public static void removeGlow (Player client, Entity entity) {
+		try {
+			PluginLoader.glowingEntities.unsetGlowing(entity, client);
+		} catch (ReflectiveOperationException exception) {
+			String uid = entity.getUniqueId().toString();
+			if (entity instanceof Player) {
+				uid = entity.getName();
+			}
+			PlayerTeam team =((CraftScoreboard) client.getScoreboard()).getHandle().getPlayersTeam(uid);
+			if (team != null)
+				sendJoinTeamPacket(client,team, uid);
+		}
+	}
+
+	private static void sendJoinTeamPacket(Player player1, PlayerTeam team, String entity) {
+		ServerGamePacketListenerImpl ps = ((CraftPlayer) player1).getHandle().connection;
+		ps.send(createPlayerPacket(team,entity, ClientboundSetPlayerTeamPacket.Action.ADD));
 	}
 	
 }

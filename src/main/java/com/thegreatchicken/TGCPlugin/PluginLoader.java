@@ -5,7 +5,6 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.thegreatchicken.TGCPlugin.glow.GlowManager;
-import com.thegreatchicken.TGCPlugin.glow.GlowTickValidator;
 import com.thegreatchicken.TGCPlugin.glow.commands.GlowCommand;
 import com.thegreatchicken.TGCPlugin.glow.commands.RemoveGlowCommand;
 import com.thegreatchicken.TGCPlugin.glow.commands.TargetGlowCommand;
@@ -23,7 +22,6 @@ import com.thegreatchicken.TGCPlugin.warp.commands.ListWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.RemoveWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.StatusWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.UseWarpCommand;
-import com.thegreatchicken.TGCPlugin.worldedit.commands.BrushApplierCommand;
 import com.thegreatchicken.TGCPlugin.glow.lib.GlowingEntities;
 
 public class PluginLoader extends JavaPlugin {
@@ -77,16 +75,12 @@ public class PluginLoader extends JavaPlugin {
 		this.getCommand("removeglow").setExecutor(new RemoveGlowCommand());
 		this.getCommand("useglow"   ).setExecutor(new UseGlowCommand());
 		this.getCommand("glow"      ).setExecutor(new GlowCommand   ());
-
-		this.getCommand("webrush").setExecutor(new BrushApplierCommand());
 		end_procedure();
 		
 		running_procedure("LOAD_PACKET_LISTENER");
 		
 		glowingEntities = new GlowingEntities(this);
 		
-		GlowTickValidator runner = new GlowTickValidator();
-		runner.runLater();
 		end_procedure();
 		
 		running_procedure("ADD_EVENT_LISTENERS");
