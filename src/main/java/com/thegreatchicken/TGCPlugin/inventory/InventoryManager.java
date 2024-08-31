@@ -52,7 +52,6 @@ public class InventoryManager {
 	}
 	public static void onChange (InventoryClickEvent event) {
 		HumanEntity entity = event.getWhoClicked();
-		if (!(event.getClickedInventory() instanceof PlayerInventory)) return ;
 		if (!(entity instanceof Player)) return ;
 		InventoryMaintainer maintainer = getMaintainer((Player) entity);
 		
@@ -61,7 +60,6 @@ public class InventoryManager {
 	}
 	public static void onDrag (InventoryDragEvent event) {
 		HumanEntity entity = event.getWhoClicked();
-		if (!(event.getInventory() instanceof PlayerInventory)) return ;
 		if (!(entity instanceof Player)) return ;
 		InventoryMaintainer maintainer = getMaintainer((Player) entity);
 		
