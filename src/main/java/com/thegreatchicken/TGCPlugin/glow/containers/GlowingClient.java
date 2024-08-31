@@ -18,12 +18,12 @@ public class GlowingClient {
     }
 
     public void clear (LivingEntity entity) {
-        System.out.println("CLEARING " + entity);
-        for(Map.Entry<LivingEntity, GlowingEntity> entityEntry : entities.entrySet()) {
-            System.out.println(entityEntry.getKey() + " " + entityEntry.getValue().entity);
-        }
+        //System.out.println("CLEARING " + entity);
+        //for(Map.Entry<LivingEntity, GlowingEntity> entityEntry : entities.entrySet()) {
+        //    System.out.println(entityEntry.getKey() + " " + entityEntry.getValue().entity);
+        //}
         GlowingEntity glowingEntity = entities.get(entity);
-        System.out.println("FOUND " + glowingEntity);
+        //System.out.println("FOUND " + glowingEntity);
 
         if (glowingEntity == null) return ;
 

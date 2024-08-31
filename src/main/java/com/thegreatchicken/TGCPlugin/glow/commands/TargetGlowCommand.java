@@ -30,11 +30,11 @@ public class TargetGlowCommand implements CommandExecutor {
 		Collection<Player> clients  = Selector.selectPlayers(sender, args[0]);
 		Collection<Entity> entities = Selector.select       (sender, args[1]);
 
-		System.out.println("=== TARGET GLOW ===");
-		for (Player client : clients)
-			System.out.println("Client " + client);
-		for (Entity entity : entities)
-			System.out.println("Entity " + entity);
+		//System.out.println("=== TARGET GLOW ===");
+		//for (Player client : clients)
+		//	System.out.println("Client " + client);
+		//for (Entity entity : entities)
+		//	System.out.println("Entity " + entity);
 
 		for (Entity entity : entities) {
 			if (!(entity instanceof LivingEntity)) continue ;

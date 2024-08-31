@@ -24,7 +24,7 @@ public class GlowEnchantment extends Enchantment {
 		try {
 			GlowEnchantment glow = new GlowEnchantment();
             
-			System.out.println(org.bukkit.Registry.ENCHANTMENT);
+			//System.out.println(org.bukkit.Registry.ENCHANTMENT);
         }
         catch (IllegalArgumentException e){
         }

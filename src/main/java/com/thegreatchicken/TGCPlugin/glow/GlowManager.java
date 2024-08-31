@@ -150,13 +150,13 @@ public class GlowManager {
 	public static void addGlow (Player client, LivingEntity entity, String color) {
 		ChatColor chatColor = ChatColor.valueOf(color);
 		try {
-			System.out.println("USE GLOWING " + entity + " " + client + " " + chatColor);
+			//System.out.println("USE GLOWING " + entity + " " + client + " " + chatColor);
 			PluginLoader.glowingEntities.setGlowing(entity, client, chatColor);
 		} catch (ReflectiveOperationException exception) {}
 	}
 	public static void addGlow (Player client, Entity entity) {
 		try {
-			System.out.println("USE GLOWING " + entity + " " + client);
+			//System.out.println("USE GLOWING " + entity + " " + client);
 			PluginLoader.glowingEntities.setGlowing(entity, client);
 		} catch (ReflectiveOperationException exception) {
 
@@ -164,7 +164,7 @@ public class GlowManager {
 	}
 	public static void removeGlow (Player client, Entity entity) {
 		try {
-			System.out.println("STOP GLOWING " + entity + " " + client);
+			//System.out.println("STOP GLOWING " + entity + " " + client);
 			PluginLoader.glowingEntities.unsetGlowing(entity, client);
 			
 			String uid = entity.getUniqueId().toString();

@@ -59,7 +59,7 @@ public class ClearPreprocessor implements Listener {
         	if (entity == null || (!(entity instanceof Player))) continue ;
         	
         	Player player = (Player) entity;
-			System.out.println("Applying clear to " + player.getName());
+			//System.out.println("Applying clear to " + player.getName());
         	
         	InventoryManager.getMaintainerOrDefault(player)
         					.onClear(player);
