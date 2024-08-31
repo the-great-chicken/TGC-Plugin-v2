@@ -34,16 +34,6 @@ public class GlowTickValidator implements Runnable {
 				if (action.endTime >= time && !action.closed) continue ;
 				
 				to_remove.add(action);
-				PluginLoader.glowingEntities.unsetGlowing(action.entity, action.client);
-
-				// send join team if is in it
-				String name =  action.entity.getUniqueId().toString();
-				if (action.entity instanceof Player) {
-					name = action.entity.getName();
-				}
-				PlayerTeam team =((CraftScoreboard) action.client.getScoreboard()).getHandle().getPlayersTeam(name);
-				if (team != null)
-					sendJoinTeamPacket(action.client,team, name);
 			}
 			
 			for (GlowAction action : to_remove)
@@ -55,8 +45,5 @@ public class GlowTickValidator implements Runnable {
 		this.runLater();
 	}
 
-	private void sendJoinTeamPacket(Player player1, PlayerTeam team, String entity) {
-		ServerGamePacketListenerImpl ps = ((CraftPlayer) player1).getHandle().connection;
-		ps.send(createPlayerPacket(team,entity,ClientboundSetPlayerTeamPacket.Action.ADD));
-	}
+
 }
