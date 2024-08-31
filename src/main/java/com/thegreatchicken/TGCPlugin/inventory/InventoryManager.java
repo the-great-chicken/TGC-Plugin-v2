@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.inventory.PlayerInventory;
 
 import com.thegreatchicken.TGCPlugin.inventory.maintainers.LobbyInventory;
 import com.thegreatchicken.TGCPlugin.inventory.maintainers.PvpInventory;
@@ -51,6 +52,7 @@ public class InventoryManager {
 	}
 	public static void onChange (InventoryClickEvent event) {
 		HumanEntity entity = event.getWhoClicked();
+		if (!(event.getClickedInventory() instanceof PlayerInventory)) return ;
 		if (!(entity instanceof Player)) return ;
 		InventoryMaintainer maintainer = getMaintainer((Player) entity);
 		
@@ -59,6 +61,7 @@ public class InventoryManager {
 	}
 	public static void onDrag (InventoryDragEvent event) {
 		HumanEntity entity = event.getWhoClicked();
+		if (!(event.getInventory() instanceof PlayerInventory)) return ;
 		if (!(entity instanceof Player)) return ;
 		InventoryMaintainer maintainer = getMaintainer((Player) entity);
 		

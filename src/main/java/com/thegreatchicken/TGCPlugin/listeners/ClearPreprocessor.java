@@ -38,27 +38,7 @@ public class ClearPreprocessor implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)	
-	public void onCommandDispatch (PlayerCommandPreprocessEvent event) {
-		System.out.println("Intercepted command " + event.getMessage());
-		System.out.println("Sender " + event.getPlayer());
-		if (!(event.getPlayer() instanceof BlockCommandSender)) return ;
-		
-		String command = event.getMessage();
-        String[] words = command.split(" ");
-        if (!isClearCommand(words[0])) return ;
-        
-        if (words.length != 1) {
-			
-
-            event.setCancelled(true);
-			event.setMessage("");
-			return ;
-        }
-	}
-	@EventHandler(priority = EventPriority.HIGHEST)	
     public void onCommandBlockDispatch(ServerCommandEvent event) {
-		System.out.println("Intercepted command " + event.getCommand());
-		System.out.println("Sender " + event.getSender());
 		if (!(event.getSender() instanceof BlockCommandSender)) return ;
 		
 		BlockCommandSender sender = (BlockCommandSender) event.getSender();

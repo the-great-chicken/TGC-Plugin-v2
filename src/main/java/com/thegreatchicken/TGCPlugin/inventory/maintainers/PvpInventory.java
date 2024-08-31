@@ -87,7 +87,7 @@ public class PvpInventory extends InventoryMaintainer {
 		
 		compass = player.getInventory().getItem(8);
 		
-		boolean enchanted = !GlowManager.isInCooldown(player);
+		/*boolean enchanted = !GlowManager.isInCooldown(player);
 		ItemMeta meta = compass.getItemMeta();
 		if (enchanted) {
 			Map<Enchantment, Integer> enchants = meta.getEnchants();
@@ -102,8 +102,8 @@ public class PvpInventory extends InventoryMaintainer {
 			
 			for (Enchantment enchant : enchants.keySet())
 				meta.removeEnchant(enchant);
-		}
-		compass.setItemMeta(meta);
+		}*/
+		//compass.setItemMeta(meta);
 	}
 
 }
