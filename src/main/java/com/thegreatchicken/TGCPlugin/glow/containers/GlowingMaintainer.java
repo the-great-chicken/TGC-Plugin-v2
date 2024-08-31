@@ -39,7 +39,7 @@ public class GlowingMaintainer {
         for (Player player : entity.clients) {
             GlowingClient client = getClient(player);
 
-            client.add(player, entity);
+            client.add(entity);
         }
 
         entity.register();
@@ -63,7 +63,7 @@ public class GlowingMaintainer {
         start(glowingEntity, duration);
     }
     public void removeGlow (LivingEntity entity) {
-        for (GlowingEntity entry : List.copyOf( entities.get(entity) ))
+        for (GlowingEntity entry : List.copyOf( getGlowingEntities(entity) ))
             entry.unregisterAll();
     }
     public void removeGlow (LivingEntity entity, Player player) {

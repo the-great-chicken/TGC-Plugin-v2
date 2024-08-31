@@ -1,6 +1,7 @@
 package com.thegreatchicken.TGCPlugin.glow.containers;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -17,7 +18,12 @@ public class GlowingClient {
     }
 
     public void clear (LivingEntity entity) {
+        System.out.println("CLEARING " + entity);
+        for(Map.Entry<LivingEntity, GlowingEntity> entityEntry : entities.entrySet()) {
+            System.out.println(entityEntry.getKey() + " " + entityEntry.getValue().entity);
+        }
         GlowingEntity glowingEntity = entities.get(entity);
+        System.out.println("FOUND " + glowingEntity);
 
         if (glowingEntity == null) return ;
 
@@ -25,9 +31,9 @@ public class GlowingClient {
 
         glowingEntity.unregister(player);
     }
-    public void add (LivingEntity entity, GlowingEntity glowingEntity) {
-        clear(entity);
+    public void add (GlowingEntity glowingEntity) {
+        clear(glowingEntity.entity);
 
-        entities.put(entity, glowingEntity);
+        entities.put(glowingEntity.entity, glowingEntity);
     }
 }

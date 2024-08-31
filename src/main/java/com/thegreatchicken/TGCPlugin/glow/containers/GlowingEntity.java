@@ -31,12 +31,13 @@ public class GlowingEntity {
             GlowManager.addGlow(client, entity, color);
     }
     void unregisterAll () {
-        for (Player client : clients) {
+        HashSet<Player> copyOfClients = new HashSet<>(clients);
+        clients.clear();
+
+        for (Player client : copyOfClients) {
             GlowingMaintainer.instance().unregister(client, this);
             GlowManager.removeGlow(client, entity);
         }
-
-        clients.clear();
 
         GlowingMaintainer.instance().unregister(this);
     }

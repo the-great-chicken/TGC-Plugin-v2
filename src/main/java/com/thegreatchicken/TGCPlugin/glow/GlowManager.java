@@ -72,9 +72,6 @@ public class GlowManager {
 		}
 	}
 	
-	public static void addGlow (Player client, LivingEntity entity, String color) {
-		setGlow(client, entity, color, (byte) 0x40);
-	}
 	public static void setGlow (Player client, LivingEntity entity, String color, byte b) {
 		try {
 			PluginLoader.PLUGIN.glowingEntities.setGlowing((Entity) entity, client, ChatColor.valueOf(color));;
@@ -150,8 +147,16 @@ public class GlowManager {
 		return true;
 	}
 
+	public static void addGlow (Player client, LivingEntity entity, String color) {
+		ChatColor chatColor = ChatColor.valueOf(color);
+		try {
+			System.out.println("USE GLOWING " + entity + " " + client + " " + chatColor);
+			PluginLoader.glowingEntities.setGlowing(entity, client, chatColor);
+		} catch (ReflectiveOperationException exception) {}
+	}
 	public static void addGlow (Player client, Entity entity) {
 		try {
+			System.out.println("USE GLOWING " + entity + " " + client);
 			PluginLoader.glowingEntities.setGlowing(entity, client);
 		} catch (ReflectiveOperationException exception) {
 
@@ -159,8 +164,9 @@ public class GlowManager {
 	}
 	public static void removeGlow (Player client, Entity entity) {
 		try {
+			System.out.println("STOP GLOWING " + entity + " " + client);
 			PluginLoader.glowingEntities.unsetGlowing(entity, client);
-		} catch (ReflectiveOperationException exception) {
+			
 			String uid = entity.getUniqueId().toString();
 			if (entity instanceof Player) {
 				uid = entity.getName();
@@ -168,6 +174,8 @@ public class GlowManager {
 			PlayerTeam team =((CraftScoreboard) client.getScoreboard()).getHandle().getPlayersTeam(uid);
 			if (team != null)
 				sendJoinTeamPacket(client,team, uid);
+		} catch (ReflectiveOperationException exception) {
+			System.out.println(exception);
 		}
 	}
 
