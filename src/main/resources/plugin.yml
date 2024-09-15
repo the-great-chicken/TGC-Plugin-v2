@@ -3,7 +3,7 @@ name: TGCPlugin
 description: Handle TGC-PVP Related systems
 version: 1.21.1
 api-version: 1.13
-depend: [ ProtocolLib, FastAsyncWorldEdit ]
+depend: [ ProtocolLib, FastAsyncWorldEdit, CommandAPI ]
 commands:
    usewarp:
       description: Use a warp
@@ -20,18 +20,6 @@ commands:
    listwarp:
       description: List existing warps
       usage: /listwarp
-   useglow:
-      description: Make other players in range glow
-      usage: /useglow
-   glow:
-      description: Make one player glow
-      usage: /glow <player> <duration>
-   targetglow:
-      description: Make one player glow on a client
-      usage: /targetglow <client> <player>
-   removeglow:
-      description: Remove the glow from a player
-      usage: /removeglow <player>
    webrush:
       description: Apply a World Edit Brush to a specific location
       usage: /webrush <x> <y> <z> <name> [...args]
