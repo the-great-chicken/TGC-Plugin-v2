@@ -2,7 +2,9 @@ package com.thegreatchicken.TGCPlugin;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import com.thegreatchicken.TGCPlugin.glow.Glow;
 import com.thegreatchicken.TGCPlugin.glow.GlowCommand;
+import com.thegreatchicken.TGCPlugin.glow.GlowListener;
 import lombok.Getter;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -100,6 +102,7 @@ public class PluginLoader extends JavaPlugin {
 		manager.registerEvents(new InventoryListener(), PLUGIN);
 		manager.registerEvents(new DeathListener(), PLUGIN);
 		manager.registerEvents(new ClearPreprocessor(), PLUGIN);
+		manager.registerEvents(new GlowListener(), PLUGIN);
 		
 		InventoryValidator validator = new InventoryValidator();
 		validator.runLater();

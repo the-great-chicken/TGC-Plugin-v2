@@ -3,12 +3,14 @@ package com.thegreatchicken.TGCPlugin.glow;
 import com.thegreatchicken.TGCPlugin.PluginLoader;
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
+import dev.jorel.commandapi.executors.CommandArguments;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.util.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -38,45 +40,38 @@ public final class GlowCommand {
                 .then(new LiteralArgument("add")
                         .then(new EntitySelectorArgument.ManyPlayers("clients")
                                 .then(new EntitySelectorArgument.ManyEntities("entities")
+                                        .executes((sender, args) -> {
+                                            addGlow( args, null);
+                                        })
                                         .then(new ChatColorArgument("color")
                                                 .executes((sender, args) -> {
                                                     ChatColor color = args.getUnchecked("color");
                                                     ChatFormatting chatFormatting = ChatFormatting.getByName(color.name());
-                                                    List<Player> players = args.getUnchecked("clients");
-                                                    List<Entity> entities = args.getUnchecked("entities");
+                                                    addGlow(args, chatFormatting);
 
-                                                    HashMap<Player, ChatFormatting> playerChatFormattingHashMap = new HashMap<>();
-                                                    for (Player player : players){
-                                                        playerChatFormattingHashMap.put(player,chatFormatting);
-                                                    }
-                                                    for (Entity entity : entities){
-                                                        Glow.setGlow(entity,playerChatFormattingHashMap);
-                                                    }
                                                 })
-                                                .then(new TimeArgument("duration")
+
+                                        )
+                                )
+                        )
+                ).then(new LiteralArgument("time")
+                        .then(new EntitySelectorArgument.ManyPlayers("clients")
+                                .then(new EntitySelectorArgument.ManyEntities("entities")
+                                        .then(new TimeArgument("duration")
+                                                .executes((sender, args) -> {
+                                                    addGlowTime(args,null);
+                                                }).then(new ChatColorArgument("color")
                                                         .executes((sender, args) -> {
                                                             ChatColor color = args.getUnchecked("color");
                                                             ChatFormatting chatFormatting = ChatFormatting.getByName(color.name());
-                                                            List<Player> players = args.getUnchecked("clients");
-                                                            List<Entity> entities = args.getUnchecked("entities");
-
-                                                            Integer duration = args.getUnchecked("duration");
-                                                            Tuple<ChatFormatting,Long> tuple =
-                                                                    new Tuple<>(chatFormatting,duration.longValue());
-                                                            HashMap<Player, Tuple<ChatFormatting,Long>> playerChatFormattingHashMap = new HashMap<>();
-                                                            for (Player player : players){
-                                                                playerChatFormattingHashMap.put(player,tuple);
-                                                            }
-                                                            for (Entity entity : entities){
-                                                                Glow.setGlowTime(entity,playerChatFormattingHashMap);
-                                                            }
-
+                                                            addGlowTime(args, chatFormatting);
                                                         })
                                                 )
                                         )
                                 )
                         )
-                ).then(new LiteralArgument("remove")
+                )
+                .then(new LiteralArgument("remove")
                         .then(new EntitySelectorArgument.ManyEntities("entities")
                                 .executes((sender, args) -> {
                                     List<Entity> entities = args.getUnchecked("entities");
@@ -86,6 +81,7 @@ public final class GlowCommand {
 
                                 })
                         )
+
                 ).register();
 
         new CommandTree("useglow")
@@ -109,12 +105,38 @@ public final class GlowCommand {
                     playerGlowUse.add(player.getUniqueId());
                     GlowCooldown(player);
 
-                }).then(new LiteralArgument("toogle")
+                }).then(new LiteralArgument("toggle")
                         .withPermission("tgcplugin.glow")
                         .executes(((sender, args) -> {
                             UseGlow = !UseGlow;
                             sender.sendMessage(ChatColor.GREEN + "Glow : " + (UseGlow ? "on" : "off"));
                         }))).register();
+    }
+
+    private static void addGlow(CommandArguments args, ChatFormatting chatFormatting) {
+        List<Player> players = args.getUnchecked("clients");
+        List<Entity> entities = args.getUnchecked("entities");
+        HashMap<Player, ChatFormatting> playerChatFormattingHashMap = new HashMap<>();
+        for (Player player : players){
+            playerChatFormattingHashMap.put(player,chatFormatting);
+        }
+        for (Entity entity : entities){
+            Glow.setGlow(entity,playerChatFormattingHashMap);
+        }
+    }
+
+    private static void addGlowTime(CommandArguments args, ChatFormatting chatFormatting) {
+        List<Player> players = args.getUnchecked("clients");
+        List<Entity> entities = args.getUnchecked("entities");
+        Integer duration = args.getUnchecked("duration");
+        Tuple<ChatFormatting,Long> tuple = new Tuple<>(chatFormatting,duration.longValue());
+        HashMap<Player, Tuple<ChatFormatting,Long>> playerChatFormattingHashMap = new HashMap<>();
+        for (Player player : players){
+            playerChatFormattingHashMap.put(player,tuple);
+        }
+        for (Entity entity : entities){
+            Glow.setGlowTime(entity,playerChatFormattingHashMap);
+        }
     }
 
     private static void GlowCooldown(Player player) {
