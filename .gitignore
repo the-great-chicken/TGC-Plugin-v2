@@ -2,7 +2,13 @@
 .classpath
 .project
 .settings
+.vscode
+.idea
 target
+/server/
+/ServerPlugin.iml
+/TGCPlugin.iml
+/.vscode/
 /server/
 /ServerPlugin.iml
 /TGCPlugin.iml

@@ -16,8 +16,8 @@ import com.thegreatchicken.TGCPlugin.inventory.InventoryManager;
 
 public class WarpManager {
 	
-	private static final String WARP_FOLDER = "plugins/tgc";
-	private static final String WARP_FILE   = "plugins/tgc/warps.txt";
+	private static final String WARP_FOLDER = "plugins/TGCPlugin";
+	private static final String WARP_FILE   = "plugins/TGCPlugin/warps.txt";
 	private static HashMap<String, Warp> warps = new HashMap<>();
 	
 	public static ArrayList<Warp> get () {

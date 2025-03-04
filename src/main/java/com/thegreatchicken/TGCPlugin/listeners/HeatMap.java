@@ -7,6 +7,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.UUID;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -48,25 +49,27 @@ class HeatMapLocation {
 }
 
 public class HeatMap implements Runnable {
+
+	private static StringBuffer buffer = new StringBuffer();
+	private static HashMap<UUID, HeatMapLocation> lastLocations = new HashMap<>();
+	private static HashMap<UUID, Integer> indices               = new HashMap<>();
 	
 	public void runLater () {
 		PluginLoader.BUKKIT_SERVER	
 			.getScheduler()
-			.runTaskLater(PluginLoader.PLUGIN, this, 2);
+			.runTaskTimer(PluginLoader.PLUGIN, this, 2,2);
 	}
 		
 	@Override
 	public void run() {
-		this.save(PluginLoader.BUKKIT_SERVER.getOnlinePlayers());
-			
-		this.runLater();
+		save(PluginLoader.BUKKIT_SERVER.getOnlinePlayers());
 	}
 	
-	public static final String HEATMAP_FILE   = "plugins/tgc/heatmap.txt";
-	public static final String HEATMAP_FOLDER = "plugins/tgc";
+	public static final String HEATMAP_FILE   = "plugins/TGCPlugin/heatmap.txt";
 	
 	public static void create () {
-		File folder = new File(HEATMAP_FOLDER);
+		File file = new File(HEATMAP_FILE);
+		File folder = file.getParentFile();
 		if (!folder.exists()) {
 			try {
 				folder.mkdirs();
@@ -76,7 +79,8 @@ public class HeatMap implements Runnable {
 			}
 		}
 		
-		File file = new File(HEATMAP_FILE);
+
+
 		if (file.exists()) return ;
 		
 		try {
@@ -86,22 +90,18 @@ public class HeatMap implements Runnable {
 		}
 	}
 	
-	private static StringBuffer buffer = new StringBuffer();
-	private static HashMap<Player, HeatMapLocation> lastLocations = new HashMap<>();
-	private static HashMap<Player, Integer> indices               = new HashMap<>();
-	
 	public static void save (Collection<? extends Player> players) {
 		ArrayList<Player> needsUpdate = new ArrayList<>();
 		for (Player player : players) {
 			HeatMapLocation location = new HeatMapLocation(player.getLocation());
-			
-			if (!indices.containsKey(player))
-				indices.put(player, indices.size());
-			HeatMapLocation lastLoc = lastLocations.getOrDefault(player, null);
+			UUID id = player.getUniqueId();
+			if (!indices.containsKey(id))
+				indices.put(id, indices.size());
+			HeatMapLocation lastLoc = lastLocations.getOrDefault(id, null);
 			if (lastLoc != null && location.isAlmostEqual(lastLoc))
 				continue ;
 			
-			lastLocations.put(player, location);
+			lastLocations.put(id, location);
 			needsUpdate.add(player);
 		}
 		
@@ -109,8 +109,8 @@ public class HeatMap implements Runnable {
 		buffer.append("\n");
 		
 		for (Player player : needsUpdate) {
-			HeatMapLocation location = lastLocations.get(player);
-			buffer.append(indices.get(player));
+			HeatMapLocation location = lastLocations.get(player.getUniqueId());
+			buffer.append(indices.get(player.getUniqueId()));
 			buffer.append(" ");
 			buffer.append(location.toString());
 			buffer.append("\n");
