@@ -223,12 +223,10 @@ public class Glow {
 
     public static ServerGamePacketListenerImpl getConnection(Player player){
         CraftPlayer craftPlayer = (CraftPlayer) player;
-        if (craftPlayer == null) throw new IllegalArgumentException("Player must be online");
         return craftPlayer.getHandle().connection;
     }
 
     private static void sendGlowPacket(Player player,boolean glowing,int id){
-        player.sendMessage("the entity "+id+" is "+(glowing ? "glowing" : "not glowing"));
         byte glowingByte = glowing ? 0x40 : (byte) 0;
         List<SynchedEntityData.DataValue<?>> eData = new ArrayList<>();
         eData.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), glowingByte));;
@@ -236,18 +234,15 @@ public class Glow {
     }
 
     private static void sendTeamPacket(Player player, PlayerTeam team,boolean create) {
-        player.sendMessage("the team "+team.getName()+" is "+(create ? "created" : "modified"));
         getConnection(player).send(createAddOrModifyPacket(team, create));
     }
 
     private static void sendTeamRemovePacket(Player player, PlayerTeam team) {
-        player.sendMessage("the team "+team.getName()+" is removed");
         getConnection(player).send(createRemovePacket(team));
     }
 
     private static void sendPlayerTeamPacket(Player player1, PlayerTeam team, String entity,
                                         ClientboundSetPlayerTeamPacket.Action action) {
-        player1.sendMessage("the entity "+entity+" is "+(action == Action.ADD ? "added" : "removed")+" to the team "+team.getName());
         getConnection(player1).send(createPlayerPacket(team,entity,action));
     }
 
@@ -284,7 +279,6 @@ public class Glow {
                     Glow glow = glowMap.get(id);
                     if (!glow.players.containsKey(event.getPlayer().getUniqueId()) ||
                             glow.players.get(event.getPlayer().getUniqueId()).getA() == null) continue;
-                    event.getPlayer().sendMessage("team packet canceled");
                     event.setCancelled(true);
                 }
 
@@ -307,7 +301,6 @@ public class Glow {
                                 new EntityDataAccessor<>(0,EntityDataSerializers.BYTE), (byte) 0))){
                     Glow glow = getGlowByEntityID(GlowPacket.id());
                     if (glow == null || !glow.players.containsKey(event.getPlayer().getUniqueId())) return;
-                    event.getPlayer().sendMessage("glow packet canceled");
                     event.setCancelled(true);
                 }
             }
@@ -317,7 +310,6 @@ public class Glow {
     }
 
     public static void loadGlow(Player player){
-        player.sendMessage("load glow");
         getGlowEntitys().forEach(entity -> {
             Glow glow = glowMap.get(entity);
             if (glow.players.containsKey(player.getUniqueId())){

@@ -10,7 +10,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.util.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
