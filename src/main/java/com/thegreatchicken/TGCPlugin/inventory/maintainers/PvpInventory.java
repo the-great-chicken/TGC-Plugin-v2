@@ -1,27 +1,21 @@
 package com.thegreatchicken.TGCPlugin.inventory.maintainers;
 
-import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.player.PlayerChangedMainHandEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.PlayerInventory;
 
-import com.thegreatchicken.TGCPlugin.glow.GlowManager;
 import com.thegreatchicken.TGCPlugin.inventory.InventoryMaintainer;
-import com.thegreatchicken.TGCPlugin.inventory.enchantments.GlowEnchantment;
 
 public class PvpInventory extends InventoryMaintainer {
 

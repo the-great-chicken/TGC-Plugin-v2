@@ -1,14 +1,16 @@
 package com.thegreatchicken.TGCPlugin;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.thegreatchicken.TGCPlugin.glow.Glow;
+import com.thegreatchicken.TGCPlugin.glow.GlowCommand;
+import com.thegreatchicken.TGCPlugin.glow.GlowListener;
+import lombok.Getter;
 import org.bukkit.Server;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.thegreatchicken.TGCPlugin.glow.GlowManager;
-import com.thegreatchicken.TGCPlugin.glow.commands.GlowCommand;
-import com.thegreatchicken.TGCPlugin.glow.commands.RemoveGlowCommand;
-import com.thegreatchicken.TGCPlugin.glow.commands.TargetGlowCommand;
-import com.thegreatchicken.TGCPlugin.glow.commands.UseGlowCommand;
 import com.thegreatchicken.TGCPlugin.inventory.InventoryListener;
 import com.thegreatchicken.TGCPlugin.inventory.InventoryValidator;
 import com.thegreatchicken.TGCPlugin.inventory.enchantments.GlowEnchantment;
@@ -22,13 +24,14 @@ import com.thegreatchicken.TGCPlugin.warp.commands.ListWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.RemoveWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.StatusWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.UseWarpCommand;
-import com.thegreatchicken.TGCPlugin.glow.lib.GlowingEntities;
 
+import static com.thegreatchicken.TGCPlugin.glow.Glow.registerGlowListener;
+
+@Getter
 public class PluginLoader extends JavaPlugin {
 	
 	public static Server BUKKIT_SERVER;
-	public static PluginLoader PLUGIN;
-	public static GlowingEntities glowingEntities;
+	public static PluginLoader PLUGIN ;
 	
 	public static void danger (String message) {
 		log("DANGER", message);
@@ -52,12 +55,21 @@ public class PluginLoader extends JavaPlugin {
 	public static void end_procedure () {
 		config( "" );
 	}
-	
+
+	public static ProtocolManager PROTOCOL_MANAGER;
+
+	@Override
+	public void onLoad() {
+		PLUGIN = this;
+		PROTOCOL_MANAGER = ProtocolLibrary.getProtocolManager();
+	}
+
 	@Override
 	public void onEnable () {
+		GlowCommand.CommandRegister();
+
 		running_procedure("LOAD_SERVER");
 		BUKKIT_SERVER = this.getServer();
-		PLUGIN = this;
 		end_procedure();
 
 		running_procedure("LOAD_WARP");
@@ -71,15 +83,15 @@ public class PluginLoader extends JavaPlugin {
 		this.getCommand("statuswarp").setExecutor(new StatusWarpCommand());
 		this.getCommand("listwarp"  ).setExecutor(new ListWarpCommand  ());
 
-		this.getCommand("targetglow").setExecutor(new TargetGlowCommand());
-		this.getCommand("removeglow").setExecutor(new RemoveGlowCommand());
-		this.getCommand("useglow"   ).setExecutor(new UseGlowCommand());
-		this.getCommand("glow"      ).setExecutor(new GlowCommand   ());
+		//this.getCommand("targetglow").setExecutor(new TargetGlowCommand());
+		//this.getCommand("removeglow").setExecutor(new RemoveGlowCommand());
+		//this.getCommand("useglow"   ).setExecutor(new UseGlowCommand());
+		//this.getCommand("glow"      ).setExecutor(new GlowCommand   ());
 		end_procedure();
 		
 		running_procedure("LOAD_PACKET_LISTENER");
-		
-		glowingEntities = new GlowingEntities(this);
+
+		registerGlowListener(PROTOCOL_MANAGER);
 		
 		end_procedure();
 		
@@ -90,6 +102,7 @@ public class PluginLoader extends JavaPlugin {
 		manager.registerEvents(new InventoryListener(), PLUGIN);
 		manager.registerEvents(new DeathListener(), PLUGIN);
 		manager.registerEvents(new ClearPreprocessor(), PLUGIN);
+		manager.registerEvents(new GlowListener(), PLUGIN);
 		
 		InventoryValidator validator = new InventoryValidator();
 		validator.runLater();
@@ -103,7 +116,7 @@ public class PluginLoader extends JavaPlugin {
 		end_procedure();
 		
 		running_procedure("GLOW_CONFIG");
-		GlowManager.init();
+		this.saveDefaultConfig();
 		end_procedure();
 	}
 	@Override

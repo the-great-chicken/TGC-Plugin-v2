@@ -1,0 +1,5 @@
+glow:
+  time: 100
+  cooldown: 200
+  minDistance: 8
+  color: WHITE
