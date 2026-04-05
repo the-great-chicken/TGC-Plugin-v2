@@ -1,13 +1,11 @@
 package com.thegreatchicken.TGCPlugin;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.thegreatchicken.TGCPlugin.glow.Glow;
+import com.github.retrooper.packetevents.PacketEvents;
 import com.thegreatchicken.TGCPlugin.glow.GlowCommand;
 import com.thegreatchicken.TGCPlugin.glow.GlowListener;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import org.bukkit.Server;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -24,8 +22,6 @@ import com.thegreatchicken.TGCPlugin.warp.commands.ListWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.RemoveWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.StatusWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.UseWarpCommand;
-
-import static com.thegreatchicken.TGCPlugin.glow.Glow.registerGlowListener;
 
 @Getter
 public class PluginLoader extends JavaPlugin {
@@ -56,16 +52,14 @@ public class PluginLoader extends JavaPlugin {
 		config( "" );
 	}
 
-	public static ProtocolManager PROTOCOL_MANAGER;
-
 	@Override
 	public void onLoad() {
 		PLUGIN = this;
-		PROTOCOL_MANAGER = ProtocolLibrary.getProtocolManager();
 	}
 
 	@Override
 	public void onEnable () {
+		PacketEvents.getAPI().init();
 		GlowCommand.CommandRegister();
 
 		running_procedure("LOAD_SERVER");
@@ -90,8 +84,6 @@ public class PluginLoader extends JavaPlugin {
 		end_procedure();
 		
 		running_procedure("LOAD_PACKET_LISTENER");
-
-		registerGlowListener(PROTOCOL_MANAGER);
 		
 		end_procedure();
 		

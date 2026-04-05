@@ -1,62 +1,48 @@
 package com.thegreatchicken.TGCPlugin.glow;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
+import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.thegreatchicken.TGCPlugin.PluginLoader;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
-import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.util.Tuple;
-import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.Scoreboard;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.block.Chest;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R1.scoreboard.CraftScoreboard;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Team;
 
 import java.util.*;
-
-import static net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket.*;
 
 public class Glow {
 
     private static final HashMap<Integer,Glow> glowMap = new HashMap<>();
-    private final HashMap<UUID, Tuple<PlayerTeam,Integer>> players;
+    private final HashMap<UUID, GlowInstance> players;
     private final Entity glowEntity;
+    
+    private Team tempTeam;
 
-    private static final Scoreboard SCOREBOARD = new Scoreboard();
-    private PlayerTeam tempTeam;
 
-
-    private Glow(Entity entity, HashMap<Player, Tuple<ChatFormatting,Long>> players) {
+    private Glow(Entity entity, HashMap<Player, Pair<NamedTextColor,Long>> players) {
         this.glowEntity = entity;
-        HashMap<UUID, Tuple<PlayerTeam, Integer>> playerTeams = new HashMap<>();
-        for (Map.Entry<Player, Tuple<ChatFormatting, Long>> entry : players.entrySet()) {
-            ChatFormatting color = entry.getValue().getA();
-            PlayerTeam team = color == null ? null : createTeam(entry.getValue().getA());
-            Long time = entry.getValue().getB();
+        HashMap<UUID, Pair<Team, Integer>> Teams = new HashMap<>();
+        for (Map.Entry<Player, Pair<NamedTextColor, Long>> entry : players.entrySet()) {
+            NamedTextColor color = entry.getValue().getKey();
+            Team team = color == null ? null : createTeam(entry.getValue().getKey());
+            Long time = entry.getValue().getValue();
             addGlow(entry.getKey(), team);
             int id = -1;
             if (time != -1) {
                 id = scheduler(entry.getKey(), time);
             }
-            playerTeams.put(entry.getKey().getUniqueId(), new Tuple<>(team, id));
+            Teams.put(entry.getKey().getUniqueId(), new MutablePair<>(team, id));
 
         }
-        this.players = playerTeams;
+        this.players = Teams;
 
     }
 
@@ -64,22 +50,23 @@ public class Glow {
         return setGlow(entity,new HashMap<>());
     }
 
-    public static Glow setGlow(Entity entity, HashMap<Player,ChatFormatting> players){
-        HashMap<Player, Tuple<ChatFormatting,Long>> playerTeams = new HashMap<>();
-        for (Map.Entry<Player,ChatFormatting> player: players.entrySet()){
-            playerTeams.put(player.getKey(),new Tuple<>(player.getValue(),-1L));
+    public static Glow setGlow(Entity entity, HashMap<Player,NamedTextColor> players){
+        HashMap<Player, Pair<NamedTextColor,Long>> teams = new HashMap<>();
+        for (Map.Entry<Player,NamedTextColor> player: players.entrySet()){
+            teams.put(player.getKey(),new MutablePair<>(player.getValue(),-1L));
         }
-        return setGlowTime(entity,playerTeams);
+        return setGlowTime(entity,teams);
     }
 
-    public static Glow setGlowTime(Entity entity, HashMap<Player,Tuple<ChatFormatting,Long>> players){
+    @SuppressWarnings("DataFlowIssue")
+    public static Glow setGlowTime(Entity entity, HashMap<Player,Pair<NamedTextColor,Long>> players){
         Integer uid = entity.getEntityId();
         if (glowMap.containsKey(uid)){
             Glow glow = glowMap.get(uid);
-            for (Map.Entry<Player,Tuple<ChatFormatting,Long>> entry: players.entrySet()){
-                ChatColor color = ChatColor.valueOf(entry.getValue().getA().name());
-                System.out.println(entry.getValue().getA().name()+" : "+ color.name());
-                glow.addPlayerTime(entry.getKey(),color, entry.getValue().getB());
+            for (Map.Entry<Player,Pair<NamedTextColor,Long>> entry: players.entrySet()){
+                NamedTextColor color = entry.getValue().getKey();
+                System.out.println(entry.getValue().getKey()+" : "+ color.asHexString());
+                glow.addPlayerTime(entry.getKey(),color, entry.getValue().getValue());
             }
             return glowMap.put(uid,glow);
         }
@@ -88,75 +75,72 @@ public class Glow {
         return glow;
     }
 
-    private PlayerTeam createTeam(ChatFormatting color){
-        if (color == null || !color.isColor()) throw new IllegalArgumentException("ChatFormatting must be a color " +
+    private Team createTeam(NamedTextColor color){
+        if (color == null ) throw new IllegalArgumentException("NamedTextColor must be a color " +
                 "format");
-        PlayerTeam team = new PlayerTeam(SCOREBOARD, glowEntity.getUniqueId().toString());
-        team.setColor(color);
+        Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(color.asHexString());
+        if (team == null){
+            team = Bukkit.getScoreboardManager().getMainScoreboard().registerNewTeam(color.asHexString());
+        }
+        team.color(color);
         return team;
     }
 
-    public void addPlayer(Player player, ChatColor color) {
+    public void addPlayer(Player player, NamedTextColor color) {
         addPlayerTime(player,color,-1L);
     }
 
-    public void addPlayerTime(Player player, ChatColor color, Long time) {
-        if (color == null || !color.isColor())
-            throw new IllegalArgumentException("ChatColor must be a color format" + color);
+    public void addPlayerTime(Player player, NamedTextColor color, Long time) {
+        if (color == null)
+            throw new IllegalArgumentException("NamedTextColor must be a color format" + color);
 
-        UUID ID = player.getUniqueId();
-        ChatFormatting chatFormatting = ChatFormatting.getByName(color.name());
-        Tuple<PlayerTeam,Integer> tuple = players.get(ID) == null ? new Tuple<>(null,-1) :
-                players.get(ID);
+        UUID id = player.getUniqueId();
+        Pair<Team,Integer> pair = players.computeIfAbsent(id,k -> new MutablePair<>(null,scheduler(player, time)));
 
 
         //si le joueur n'est pas dans la liste
-        if (!players.containsKey(ID)){
+        if (!players.containsKey(id)){
             sendGlowPacket(player,true,glowEntity.getEntityId());
             if (time != -1) {
-                tuple.setB(scheduler(player, time));
+                pair.setValue(scheduler(player, time));
             }
         }
         else {
             //si le joueur est dans la liste mais que le temps n'est pas null
-            if (tuple.getB() != -1) {
-                Bukkit.getScheduler().cancelTask(tuple.getB());
-                tuple.setB(scheduler(player, time));
-            }
-            if (chatFormatting == null) {
-                players.put(ID, tuple);
-                return;
+            if (pair.getValue() != -1) {
+                Bukkit.getScheduler().cancelTask(pair.getValue());
+                pair.setValue(scheduler(player, time));
             }
             //si le joueur est dans la liste mais que la couleur est différente
-            if (tuple.getA().getColor() != chatFormatting) {
-                if (players.containsKey(ID) && players.get(ID).getA() == null)
-                    sendTeamPacket(player, createTeam(chatFormatting), true);
-                ChangeColor(player, chatFormatting);
+            if (pair.getKey().color() != color) {
+                if (players.containsKey(id) && players.get(id).getKey() == null)
+                    sendTeamPacket(player, createTeam(color), true);
+                ChangeColor(player, color);
                 return;
             }
         }
-        tuple.setA(createTeam(chatFormatting));
-        sendTeamPacket(player,tuple.getA(),true);
-        players.put(ID, tuple);
+        pair.setA(createTeam(NamedTextColor));
+        sendTeamPacket(player,pair.getKey(),true);
+        players.put(id, pair);
 
     }
 
-    public void addPlayers(HashMap<Player,ChatColor> players){
-        for (Map.Entry<Player,ChatColor> entry: players.entrySet()){
+    public void addPlayers(HashMap<Player,NamedTextColor> players){
+        for (Map.Entry<Player,NamedTextColor> entry: players.entrySet()){
             addPlayer(entry.getKey(),entry.getValue());
         }
     }
 
-    public void addPlayersTime(HashMap<Player,Tuple<ChatColor,Long>> players){
-        for (Map.Entry<Player,Tuple<ChatColor,Long>> entry: players.entrySet()){
-            addPlayerTime(entry.getKey(),entry.getValue().getA(),entry.getValue().getB());
+    public void addPlayersTime(HashMap<Player,Pair<NamedTextColor,Long>> players){
+        for (Map.Entry<Player,Pair<NamedTextColor,Long>> entry: players.entrySet()){
+            addPlayerTime(entry.getKey(),entry.getValue().getKey(),entry.getValue().getValue());
         }
     }
 
     public void removePlayer(Player player){
         UUID ID = player.getUniqueId();
         if (!players.containsKey(ID)) return;
-        tempTeam = players.get(ID).getA();
+        tempTeam = players.get(ID).getKey();
         players.remove(ID);
         removeGlow(player);
         if (players.isEmpty())
@@ -167,7 +151,7 @@ public class Glow {
     public void removeGlow(){
         glowMap.remove(glowEntity.getEntityId());
         for (UUID player: players.keySet()){
-            tempTeam = players.get(player).getA();
+            tempTeam = players.get(player).getKey();
             Player player1 = Bukkit.getPlayer(player);
             assert player1 != null;
             removeGlow(player1);
@@ -181,11 +165,11 @@ public class Glow {
         }
     }
 
-    private void addGlow(Player player,PlayerTeam team){
+    private void addGlow(Player player,Team team){
         sendGlowPacket(player,true,glowEntity.getEntityId());
         if (team == null) return;
         sendTeamPacket(player,team,true);
-        sendPlayerTeamPacket(player,team, getEntityId(glowEntity), ClientboundSetPlayerTeamPacket.Action.ADD);
+        sendTeamPacket(player,team, getEntityId(glowEntity), ClientboundSetTeamPacket.Action.ADD);
     }
 
     private void removeGlow(Player player){
@@ -196,57 +180,51 @@ public class Glow {
         tempTeam = null;
     }
 
-    private void ChangeColor(Player player,ChatFormatting color){
+    private void ChangeColor(Player player,NamedTextColor color){
         UUID ID = player.getUniqueId();
-        Tuple<PlayerTeam,Integer> tuple = players.get(ID);
-        PlayerTeam team = players.get(ID).getA();
+        Pair<Team,Integer> Pair = players.get(ID);
+        Team team = players.get(ID).getKey();
         team.setColor(color);
         sendTeamPacket(player,team,false);
-        tuple.setA(team);
-        players.put(ID,tuple);
+        Pair.setA(team);
+        players.put(ID,Pair);
     }
 
     private void removeTeam(Player client){
         if (tempTeam == null) return;
         String uid = getEntityId(glowEntity);
-        sendPlayerTeamPacket(client,tempTeam, uid, ClientboundSetPlayerTeamPacket.Action.REMOVE);
+        sendTeamPacket(client,tempTeam, uid, ClientboundSetTeamPacket.Action.REMOVE);
         sendTeamRemovePacket(client,tempTeam);
 
-        PlayerTeam team =((CraftScoreboard) client.getScoreboard()).getHandle().getPlayersTeam(uid);
+        Team team =((CraftScoreboard) client.getScoreboard()).getHandle().getPlayersTeam(uid);
         if (team != null)
-            sendPlayerTeamPacket(client,team, uid, ClientboundSetPlayerTeamPacket.Action.ADD);
+            sendTeamPacket(client,team, uid, ClientboundSetTeamPacket.Action.ADD);
 
     }
 
 
     //====================Packet====================
 
-    public static ServerGamePacketListenerImpl getConnection(Player player){
-        CraftPlayer craftPlayer = (CraftPlayer) player;
-        if (craftPlayer == null) throw new IllegalArgumentException("Player must be online");
-        return craftPlayer.getHandle().connection;
-    }
-
     private static void sendGlowPacket(Player player,boolean glowing,int id){
         player.sendMessage("the entity "+id+" is "+(glowing ? "glowing" : "not glowing"));
         byte glowingByte = glowing ? 0x40 : (byte) 0;
-        List<SynchedEntityData.DataValue<?>> eData = new ArrayList<>();
-        eData.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), glowingByte));;
-        getConnection(player).send(new ClientboundSetEntityDataPacket(id, eData));
+        List<EntityData<?>> entityData = List.of(new EntityData<>(0, EntityDataTypes.BYTE, glowingByte));
+        var packet = new WrapperPlayServerEntityMetadata(id,entityData);
+        PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
     }
 
-    private static void sendTeamPacket(Player player, PlayerTeam team,boolean create) {
+    private static void sendTeamPacket(Player player, Team team,boolean create) {
         player.sendMessage("the team "+team.getName()+" is "+(create ? "created" : "modified"));
-        getConnection(player).send(createAddOrModifyPacket(team, create));
+        PacketEvents.getAPI().getPlayerManager().sendPacket(player,createAddOrModifyPacket(team, create));
     }
 
-    private static void sendTeamRemovePacket(Player player, PlayerTeam team) {
+    private static void sendTeamRemovePacket(Player player, Team team) {
         player.sendMessage("the team "+team.getName()+" is removed");
         getConnection(player).send(createRemovePacket(team));
     }
 
-    private static void sendPlayerTeamPacket(Player player1, PlayerTeam team, String entity,
-                                        ClientboundSetPlayerTeamPacket.Action action) {
+    private static void sendTeamPacket(Player player1, Team team, String entity,
+                                        ClientboundSetTeamPacket.Action action) {
         player1.sendMessage("the entity "+entity+" is "+(action == Action.ADD ? "added" : "removed")+" to the team "+team.getName());
         getConnection(player1).send(createPlayerPacket(team,entity,action));
     }
@@ -275,7 +253,7 @@ public class Glow {
         ) {
             @Override
             public void onPacketSending(PacketEvent event) {
-                ClientboundSetPlayerTeamPacket GlowPlayersNames = (ClientboundSetPlayerTeamPacket) event.getPacket().getHandle();
+                ClientboundSetTeamPacket GlowPlayersNames = (ClientboundSetTeamPacket) event.getPacket().getHandle();
                 String[] players = GlowPlayersNames.getPlayers().toArray(new String[0]);
                 for (String player: players){
                     Player player1 = Bukkit.getPlayer(player);
@@ -283,7 +261,7 @@ public class Glow {
                     if (!glowMap.containsKey(id)) continue;
                     Glow glow = glowMap.get(id);
                     if (!glow.players.containsKey(event.getPlayer().getUniqueId()) ||
-                            glow.players.get(event.getPlayer().getUniqueId()).getA() == null) continue;
+                            glow.players.get(event.getPlayer().getUniqueId()).getKey() == null) continue;
                     event.getPlayer().sendMessage("team packet canceled");
                     event.setCancelled(true);
                 }
@@ -321,11 +299,11 @@ public class Glow {
         getGlowEntitys().forEach(entity -> {
             Glow glow = glowMap.get(entity);
             if (glow.players.containsKey(player.getUniqueId())){
-                Tuple<PlayerTeam,Integer> temp = glow.players.remove(player.getUniqueId());
-                PlayerTeam team = temp.getA();
+                Pair<Team,Integer> temp = glow.players.remove(player.getUniqueId());
+                Team team = temp.getKey();
                 sendGlowPacket(player,true,entity);
                 sendTeamPacket(player,team,true);
-                sendPlayerTeamPacket(player,team,getEntityId(glow.glowEntity), ClientboundSetPlayerTeamPacket.Action.ADD);
+                sendTeamPacket(player,team,getEntityId(glow.glowEntity), ClientboundSetTeamPacket.Action.ADD);
                 glow.players.put(player.getUniqueId(),temp);
             }
         });
