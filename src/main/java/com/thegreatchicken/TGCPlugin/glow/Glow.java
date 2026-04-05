@@ -1,10 +1,9 @@
 package com.thegreatchicken.TGCPlugin.glow;
 
-import com.github.retrooper.packetevents.PacketEvents;
-import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
-import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTeams;
 import com.thegreatchicken.TGCPlugin.PluginLoader;
+import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -16,23 +15,23 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Team;
 
+import static com.thegreatchicken.TGCPlugin.glow.PacketUtils.*;
+
 import java.util.*;
 
 public class Glow {
 
     private static final HashMap<Integer,Glow> glowMap = new HashMap<>();
     private final HashMap<UUID, GlowInstance> players;
+    @Getter
     private final Entity glowEntity;
-    
-    private Team tempTeam;
-
 
     private Glow(Entity entity, HashMap<Player, Pair<NamedTextColor,Long>> players) {
         this.glowEntity = entity;
-        HashMap<UUID, Pair<Team, Integer>> Teams = new HashMap<>();
+        HashMap<UUID, GlowInstance> Teams = new HashMap<>();
         for (Map.Entry<Player, Pair<NamedTextColor, Long>> entry : players.entrySet()) {
             NamedTextColor color = entry.getValue().getKey();
-            Team team = color == null ? null : createTeam(entry.getValue().getKey());
+            var team = color == null ? null : createTeam(entry.getValue().getKey());
             Long time = entry.getValue().getValue();
             addGlow(entry.getKey(), team);
             int id = -1;
@@ -75,14 +74,13 @@ public class Glow {
         return glow;
     }
 
-    private Team createTeam(NamedTextColor color){
+    private WrapperPlayServerTeams.ScoreBoardTeamInfo createTeam(NamedTextColor color){
         if (color == null ) throw new IllegalArgumentException("NamedTextColor must be a color " +
                 "format");
-        Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(color.asHexString());
-        if (team == null){
-            team = Bukkit.getScoreboardManager().getMainScoreboard().registerNewTeam(color.asHexString());
-        }
-        team.color(color);
+        var team = new WrapperPlayServerTeams.ScoreBoardTeamInfo(Component.empty(),null,null,
+            WrapperPlayServerTeams.NameTagVisibility.ALWAYS,
+            WrapperPlayServerTeams.CollisionRule.ALWAYS, color,
+            WrapperPlayServerTeams.OptionData.ALL);
         return team;
     }
 
@@ -114,13 +112,13 @@ public class Glow {
             //si le joueur est dans la liste mais que la couleur est différente
             if (pair.getKey().color() != color) {
                 if (players.containsKey(id) && players.get(id).getKey() == null)
-                    sendTeamPacket(player, createTeam(color), true);
+                    sendTeamCreatePacket(player, createTeam(color), true);
                 ChangeColor(player, color);
                 return;
             }
         }
         pair.setA(createTeam(NamedTextColor));
-        sendTeamPacket(player,pair.getKey(),true);
+        sendTeamCreatePacket(player,pair.getKey(),true);
         players.put(id, pair);
 
     }
@@ -140,22 +138,20 @@ public class Glow {
     public void removePlayer(Player player){
         UUID ID = player.getUniqueId();
         if (!players.containsKey(ID)) return;
-        tempTeam = players.get(ID).getKey();
-        players.remove(ID);
         removeGlow(player);
+        players.remove(ID);
         if (players.isEmpty())
             glowMap.remove(glowEntity.getEntityId());
 
     }
 
     public void removeGlow(){
-        glowMap.remove(glowEntity.getEntityId());
         for (UUID player: players.keySet()){
-            tempTeam = players.get(player).getKey();
             Player player1 = Bukkit.getPlayer(player);
             assert player1 != null;
             removeGlow(player1);
         }
+        glowMap.remove(glowEntity.getEntityId());
     }
     
     public static void removeGlow(Entity entity){
@@ -165,73 +161,37 @@ public class Glow {
         }
     }
 
-    private void addGlow(Player player,Team team){
+    private void addGlow(Player player, GlowInstance team){
         sendGlowPacket(player,true,glowEntity.getEntityId());
         if (team == null) return;
-        sendTeamPacket(player,team,true);
-        sendTeamPacket(player,team, getEntityId(glowEntity), ClientboundSetTeamPacket.Action.ADD);
+        sendTeamCreatePacket(player,team,true);
+        sendTeamJoinLeavePacket(player,team, getEntityId(glowEntity), true);
     }
 
     private void removeGlow(Player player){
         if (!player.hasPotionEffect(PotionEffectType.GLOWING))
             sendGlowPacket(player,false,glowEntity.getEntityId());
-        if (tempTeam == null) return;
         removeTeam(player);
-        tempTeam = null;
     }
 
     private void ChangeColor(Player player,NamedTextColor color){
         UUID ID = player.getUniqueId();
-        Pair<Team,Integer> Pair = players.get(ID);
-        Team team = players.get(ID).getKey();
-        team.setColor(color);
-        sendTeamPacket(player,team,false);
-        Pair.setA(team);
-        players.put(ID,Pair);
+        GlowInstance instance = players.get(ID);
+        instance.color(color);
+        sendTeamCreatePacket(player,instance,false);
     }
 
     private void removeTeam(Player client){
-        if (tempTeam == null) return;
+        var tempTeam = players.get(client.getUniqueId());
         String uid = getEntityId(glowEntity);
-        sendTeamPacket(client,tempTeam, uid, ClientboundSetTeamPacket.Action.REMOVE);
+        sendTeamJoinLeavePacket(client,tempTeam, uid, false);
         sendTeamRemovePacket(client,tempTeam);
 
-        Team team =((CraftScoreboard) client.getScoreboard()).getHandle().getPlayersTeam(uid);
+        Team team =client.getScoreboard().getTeam(uid);
         if (team != null)
-            sendTeamPacket(client,team, uid, ClientboundSetTeamPacket.Action.ADD);
-
+            sendTeamJoinLeavePacket(client,team, uid, true);
     }
 
-
-    //====================Packet====================
-
-    private static void sendGlowPacket(Player player,boolean glowing,int id){
-        player.sendMessage("the entity "+id+" is "+(glowing ? "glowing" : "not glowing"));
-        byte glowingByte = glowing ? 0x40 : (byte) 0;
-        List<EntityData<?>> entityData = List.of(new EntityData<>(0, EntityDataTypes.BYTE, glowingByte));
-        var packet = new WrapperPlayServerEntityMetadata(id,entityData);
-        PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
-    }
-
-    private static void sendTeamPacket(Player player, Team team,boolean create) {
-        player.sendMessage("the team "+team.getName()+" is "+(create ? "created" : "modified"));
-        PacketEvents.getAPI().getPlayerManager().sendPacket(player,createAddOrModifyPacket(team, create));
-    }
-
-    private static void sendTeamRemovePacket(Player player, Team team) {
-        player.sendMessage("the team "+team.getName()+" is removed");
-        getConnection(player).send(createRemovePacket(team));
-    }
-
-    private static void sendTeamPacket(Player player1, Team team, String entity,
-                                        ClientboundSetTeamPacket.Action action) {
-        player1.sendMessage("the entity "+entity+" is "+(action == Action.ADD ? "added" : "removed")+" to the team "+team.getName());
-        getConnection(player1).send(createPlayerPacket(team,entity,action));
-    }
-
-    private static String getEntityId(Entity entity){
-        return entity instanceof Player player ? player.getName() : entity.getUniqueId().toString();
-    }
 
     private int scheduler(Player player, long time){
         BukkitTask task = new BukkitRunnable() {
@@ -243,76 +203,6 @@ public class Glow {
         return task.getTaskId();
     }
 
-    //====================Packet Listener====================
-    
-    public static void registerGlowListener(ProtocolManager protocolManager){
-        protocolManager.addPacketListener(new PacketAdapter(
-                PluginLoader.PLUGIN,
-                ListenerPriority.NORMAL,
-                PacketType.Play.Server.SCOREBOARD_TEAM
-        ) {
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                ClientboundSetTeamPacket GlowPlayersNames = (ClientboundSetTeamPacket) event.getPacket().getHandle();
-                String[] players = GlowPlayersNames.getPlayers().toArray(new String[0]);
-                for (String player: players){
-                    Player player1 = Bukkit.getPlayer(player);
-                    int id = player1 == null? -1 : player1.getEntityId();
-                    if (!glowMap.containsKey(id)) continue;
-                    Glow glow = glowMap.get(id);
-                    if (!glow.players.containsKey(event.getPlayer().getUniqueId()) ||
-                            glow.players.get(event.getPlayer().getUniqueId()).getKey() == null) continue;
-                    event.getPlayer().sendMessage("team packet canceled");
-                    event.setCancelled(true);
-                }
-
-            }
-        });
-
-        protocolManager.addPacketListener(new PacketAdapter(
-                PluginLoader.PLUGIN,
-                ListenerPriority.NORMAL,
-                PacketType.Play.Server.ENTITY_METADATA
-        ) {
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                ClientboundSetEntityDataPacket GlowPacket =
-                        (ClientboundSetEntityDataPacket) event.getPacket().getHandle();
-                List<SynchedEntityData.DataValue<?>> edata = GlowPacket.packedItems();
-                if(edata.contains(SynchedEntityData.DataValue.create(
-                        new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) 0x40))
-                        || edata.contains(SynchedEntityData.DataValue.create(
-                                new EntityDataAccessor<>(0,EntityDataSerializers.BYTE), (byte) 0))){
-                    Glow glow = getGlowByEntityID(GlowPacket.id());
-                    if (glow == null || !glow.players.containsKey(event.getPlayer().getUniqueId())) return;
-                    event.getPlayer().sendMessage("glow packet canceled");
-                    event.setCancelled(true);
-                }
-            }
-        });
-
-        PluginLoader.PLUGIN.getLogger().info("packet listener load");
-    }
-
-    public static void loadGlow(Player player){
-        player.sendMessage("load glow");
-        getGlowEntitys().forEach(entity -> {
-            Glow glow = glowMap.get(entity);
-            if (glow.players.containsKey(player.getUniqueId())){
-                Pair<Team,Integer> temp = glow.players.remove(player.getUniqueId());
-                Team team = temp.getKey();
-                sendGlowPacket(player,true,entity);
-                sendTeamPacket(player,team,true);
-                sendTeamPacket(player,team,getEntityId(glow.glowEntity), ClientboundSetTeamPacket.Action.ADD);
-                glow.players.put(player.getUniqueId(),temp);
-            }
-        });
-    }
-
-
-
-    //====================Getter====================
-
     public static Glow getGlowByEntityID(int id){
         for (Glow glow: glowMap.values()){
             if (glow.glowEntity.getEntityId() == id) return glow;
@@ -320,9 +210,23 @@ public class Glow {
         return null;
     }
 
-
-
-    public static Set<Integer> getGlowEntitys(){
+    public static Set<Integer> getGlowEntities(){
         return glowMap.keySet();
+    }
+
+    public static boolean hasGlow(int id){
+        return glowMap.containsKey(id);
+    }
+
+    public static Glow getGlow(Integer id){
+        return glowMap.get(id);
+    }
+
+    public boolean hasGlow(UUID player){
+        return players.containsKey(player);
+    }
+
+    public GlowInstance getGlow(UUID player){
+        return players.get(player);
     }
 }
