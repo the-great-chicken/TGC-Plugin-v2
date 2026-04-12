@@ -31,14 +31,14 @@ public class Glow {
         HashMap<UUID, GlowInstance> Teams = new HashMap<>();
         for (Map.Entry<Player, Pair<NamedTextColor, Long>> entry : players.entrySet()) {
             NamedTextColor color = entry.getValue().getKey();
-            var team = color == null ? null : createTeam(entry.getValue().getKey());
             Long time = entry.getValue().getValue();
-            addGlow(entry.getKey(), team);
             int id = -1;
             if (time != -1) {
                 id = scheduler(entry.getKey(), time);
             }
-            Teams.put(entry.getKey().getUniqueId(), new MutablePair<>(team, id));
+            var instance = new GlowInstance(createTeam(color),id);
+            addGlow(entry.getKey(), instance);
+            Teams.put(entry.getKey().getUniqueId(), instance);
 
         }
         this.players = Teams;
@@ -64,7 +64,6 @@ public class Glow {
             Glow glow = glowMap.get(uid);
             for (Map.Entry<Player,Pair<NamedTextColor,Long>> entry: players.entrySet()){
                 NamedTextColor color = entry.getValue().getKey();
-                System.out.println(entry.getValue().getKey()+" : "+ color.asHexString());
                 glow.addPlayerTime(entry.getKey(),color, entry.getValue().getValue());
             }
             return glowMap.put(uid,glow);
@@ -75,13 +74,15 @@ public class Glow {
     }
 
     private WrapperPlayServerTeams.ScoreBoardTeamInfo createTeam(NamedTextColor color){
-        if (color == null ) throw new IllegalArgumentException("NamedTextColor must be a color " +
-                "format");
-        var team = new WrapperPlayServerTeams.ScoreBoardTeamInfo(Component.empty(),null,null,
+        if (color == null ) throw new IllegalArgumentException("NamedTextColor must be a color format");
+        return new WrapperPlayServerTeams.ScoreBoardTeamInfo(
+            Component.empty(),
+            null,
+            null,
             WrapperPlayServerTeams.NameTagVisibility.ALWAYS,
-            WrapperPlayServerTeams.CollisionRule.ALWAYS, color,
+            WrapperPlayServerTeams.CollisionRule.ALWAYS,
+            color,
             WrapperPlayServerTeams.OptionData.ALL);
-        return team;
     }
 
     public void addPlayer(Player player, NamedTextColor color) {
@@ -93,34 +94,34 @@ public class Glow {
             throw new IllegalArgumentException("NamedTextColor must be a color format" + color);
 
         UUID id = player.getUniqueId();
-        Pair<Team,Integer> pair = players.computeIfAbsent(id,k -> new MutablePair<>(null,scheduler(player, time)));
+        GlowInstance instance = players.getOrDefault(id,new GlowInstance(null,-1));
 
 
         //si le joueur n'est pas dans la liste
         if (!players.containsKey(id)){
             sendGlowPacket(player,true,glowEntity.getEntityId());
             if (time != -1) {
-                pair.setValue(scheduler(player, time));
+                instance.schedulerId(scheduler(player, time));
             }
         }
         else {
             //si le joueur est dans la liste mais que le temps n'est pas null
-            if (pair.getValue() != -1) {
-                Bukkit.getScheduler().cancelTask(pair.getValue());
-                pair.setValue(scheduler(player, time));
+            if (instance.schedulerId() != -1) {
+                Bukkit.getScheduler().cancelTask(instance.schedulerId());
+                instance.schedulerId(scheduler(player, time));
             }
             //si le joueur est dans la liste mais que la couleur est différente
-            if (pair.getKey().color() != color) {
-                if (players.containsKey(id) && players.get(id).getKey() == null)
-                    sendTeamCreatePacket(player, createTeam(color), true);
+            if (instance.color() != color) {
+                if (players.containsKey(id) && players.get(id).team() == null) {
+                    sendTeamCreatePacket(player, instance, true);
+                }
                 ChangeColor(player, color);
                 return;
             }
         }
-        pair.setA(createTeam(NamedTextColor));
-        sendTeamCreatePacket(player,pair.getKey(),true);
-        players.put(id, pair);
-
+        instance.team(createTeam(color));
+        sendTeamCreatePacket(player,instance,true);
+        players.put(id, instance);
     }
 
     public void addPlayers(HashMap<Player,NamedTextColor> players){
@@ -177,6 +178,7 @@ public class Glow {
     private void ChangeColor(Player player,NamedTextColor color){
         UUID ID = player.getUniqueId();
         GlowInstance instance = players.get(ID);
+        if (instance == null) return;
         instance.color(color);
         sendTeamCreatePacket(player,instance,false);
     }
@@ -222,7 +224,7 @@ public class Glow {
         return glowMap.get(id);
     }
 
-    public boolean hasGlow(UUID player){
+    public boolean seeGlow(UUID player){
         return players.containsKey(player);
     }
 

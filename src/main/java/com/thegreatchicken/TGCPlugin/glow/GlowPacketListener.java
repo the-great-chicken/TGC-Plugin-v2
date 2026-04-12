@@ -8,54 +8,47 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTe
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.List;
+import static com.thegreatchicken.TGCPlugin.glow.Glow.getGlowByEntityID;
 
 public class GlowPacketListener implements PacketListener {
 
-
     @Override
     public void onPacketSend(PacketSendEvent event) {
-        var cancel = switch (event.getPacketType()){
-            case PacketType.Play.Server.TEAMS -> onTeamPacketSend(event.getPlayer(),new WrapperPlayServerTeams(event));
-            case PacketType.Play.Server.ENTITY_METADATA -> {
-                onGlowPacketSend(new WrapperPlayServerEntityMetadata(event));
-                yield true;
-            }
-            default -> false;
+        switch (event.getPacketType()){
+            case PacketType.Play.Server.TEAMS -> onTeamPacketSend(event);
+            case PacketType.Play.Server.ENTITY_METADATA -> onGlowPacketSend(event);
+            default -> {return;}
         };
-        event.setCancelled(cancel);
-
     }
 
-    public boolean onTeamPacketSend(Player client,WrapperPlayServerTeams packet){
+    public void onTeamPacketSend(PacketSendEvent event){
+        var packet = new WrapperPlayServerTeams(event);
+        Player client = event.getPlayer();
         String[] players = packet.getPlayers().toArray(new String[0]);
         boolean result = false;
         for (String player: players){
             Player player1 = Bukkit.getPlayer(player);
             int id = player1 == null? -1 : player1.getEntityId();
             if (!Glow.hasGlow(id)) continue;
-            Glow glow = Glow.getGlowByEntityID(id);
-            if (glow == null || player1 == null || !glow.hasGlow(player1.getUniqueId()) ||
+            Glow glow = getGlowByEntityID(id);
+            if (glow == null || player1 == null || !glow.seeGlow(player1.getUniqueId()) ||
                 glow.getGlow(player1.getUniqueId()).team() == null) continue;
             client.sendMessage("team packet canceled");
             result = true;
         }
-        return result;
+        event.setCancelled(result);
     }
 
 
-    public boolean onGlowPacketSend(WrapperPlayServerEntityMetadata packet){
-        ClientboundSetEntityDataPacket GlowPacket =
-            (ClientboundSetEntityDataPacket) packet.getPacket().getHandle();
-        List<SynchedEntityData.DataValue<?>> edata = GlowPacket.packedItems();
-        if(edata.contains(SynchedEntityData.DataValue.create(
-            new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) 0x40))
-            || edata.contains(SynchedEntityData.DataValue.create(
-            new EntityDataAccessor<>(0,EntityDataSerializers.BYTE), (byte) 0))){
-            Glow glow = getGlowByEntityID(GlowPacket.id());
-            if (glow == null || !glow.players.containsKey(packet.getPlayer().getUniqueId())) return;
-            packet.getPlayer().sendMessage("glow packet canceled");
-            packet.setCancelled(true);
+    public void onGlowPacketSend(PacketSendEvent event){
+        var packet = new WrapperPlayServerEntityMetadata(event);
+        Player client = event.getPlayer();
+        var entityMetadata = packet.getEntityMetadata();
+        if(entityMetadata.stream().anyMatch(e-> e.getIndex() == 0
+            && ((byte)e.getValue() == 0 || (byte)e.getValue() == 0x40))){
+            Glow glow = getGlowByEntityID(packet.getEntityId());
+            if (glow == null || !glow.seeGlow(client.getUniqueId())) return;
+            event.setCancelled(true);
         }
     }
 }

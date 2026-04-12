@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.thegreatchicken.TGCPlugin.glow.GlowCommand;
 import com.thegreatchicken.TGCPlugin.glow.GlowListener;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import org.bukkit.Server;
 import org.bukkit.plugin.PluginManager;
@@ -11,7 +12,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.thegreatchicken.TGCPlugin.inventory.InventoryListener;
 import com.thegreatchicken.TGCPlugin.inventory.InventoryValidator;
-import com.thegreatchicken.TGCPlugin.inventory.enchantments.GlowEnchantment;
 import com.thegreatchicken.TGCPlugin.listeners.ClearPreprocessor;
 import com.thegreatchicken.TGCPlugin.listeners.DeathListener;
 import com.thegreatchicken.TGCPlugin.listeners.HeatMap;
@@ -60,7 +60,9 @@ public class PluginLoader extends JavaPlugin {
 	@Override
 	public void onEnable () {
 		PacketEvents.getAPI().init();
-		GlowCommand.CommandRegister();
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,command -> {
+			GlowCommand.commandRegister(command.registrar());
+		});
 
 		running_procedure("LOAD_SERVER");
 		BUKKIT_SERVER = this.getServer();
@@ -101,10 +103,6 @@ public class PluginLoader extends JavaPlugin {
 		
 		HeatMap heatmap = new HeatMap();
 		heatmap.runLater();
-		end_procedure();
-		
-		running_procedure("ADD_ENCHANTMENTS");
-		GlowEnchantment.registerEnchantment();
 		end_procedure();
 		
 		running_procedure("GLOW_CONFIG");
