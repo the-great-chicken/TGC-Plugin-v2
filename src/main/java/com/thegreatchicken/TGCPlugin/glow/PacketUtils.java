@@ -15,7 +15,6 @@ import java.util.List;
 public final class PacketUtils {
 
     public static void sendGlowPacket(Player player, boolean glowing, int id){
-        player.sendMessage("the entity "+id+" is "+(glowing ? "glowing" : "not glowing"));
         byte glowingByte = glowing ? 0x40 : (byte) 0;
         List<EntityData<?>> entityData = List.of(new EntityData<>(0, EntityDataTypes.BYTE, glowingByte));
         var packet = new WrapperPlayServerEntityMetadata(id,entityData);
@@ -23,21 +22,18 @@ public final class PacketUtils {
     }
 
     public static void sendTeamCreatePacket(Player player, GlowInstance team, boolean create) {
-        player.sendMessage("the team "+team.getTeamName()+" is "+(create ? "created" : "modified"));
         var mode = create ? WrapperPlayServerTeams.TeamMode.CREATE : WrapperPlayServerTeams.TeamMode.UPDATE;
         WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(team.getTeamName(), mode,team.team());
         PacketEvents.getAPI().getPlayerManager().sendPacketSilently(player,teamPacket);
     }
 
     public static void sendTeamRemovePacket(Player player, GlowInstance team) {
-        player.sendMessage("the team "+team.getTeamName()+" is removed");
         var mode = WrapperPlayServerTeams.TeamMode.REMOVE;
         WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(team.getTeamName(), mode,team.team());
         PacketEvents.getAPI().getPlayerManager().sendPacketSilently(player,teamPacket);
     }
 
     public static void sendTeamJoinLeavePacket(Player client, GlowInstance team, String entity, boolean add) {
-        client.sendMessage("the entity "+entity+" is "+(add ? "added" : "removed")+" to the team "+team.getTeamName());
         var mode = add ? WrapperPlayServerTeams.TeamMode.ADD_ENTITIES : WrapperPlayServerTeams.TeamMode.REMOVE_ENTITIES;
         WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(team.getTeamName(), mode,team.team(),entity);
         PacketEvents.getAPI().getPlayerManager().sendPacketSilently(client,teamPacket);

@@ -17,7 +17,6 @@ public class GlowListener implements Listener {
     }
 
     public static void loadGlow(Player player){
-        player.sendMessage("load glow");
         getGlowEntities().forEach(entity -> {
             Glow glow = Glow.getGlowByEntityID(entity);
             if (glow == null){return;}

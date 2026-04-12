@@ -9,15 +9,12 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
-import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -91,8 +88,9 @@ public final class GlowCommand {
                     Player player = (Player) ctx.getSource().getExecutor();
                     if (playerGlowUse.containsKey(player.getUniqueId())) {
                         long startTime = playerGlowUse.get(player.getUniqueId());
-                        long time = startTime - System.currentTimeMillis() + GlowTime*50;
-                        player.sendActionBar(text("You need to wait "+time/1000+"s").color(NamedTextColor.RED));
+                        long time = startTime - System.currentTimeMillis() + GlowCooldown*50;
+                        Component time_text = text(time/1000+"s").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD);
+                        player.sendActionBar(text("You need to wait ").color(NamedTextColor.RED).append(time_text));
                         return Command.SINGLE_SUCCESS;
                     }
                     HashMap<Player, Pair<NamedTextColor,Long>> playerChatFormattingHashMap = new HashMap<>();

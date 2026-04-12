@@ -1,8 +1,10 @@
 package com.thegreatchicken.TGCPlugin.listeners;
 
+import com.thegreatchicken.TGCPlugin.PluginLoader;
 import com.thegreatchicken.TGCPlugin.warp.WarpManager;
 import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent;
 import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -47,9 +49,8 @@ public class LoginListener implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void onLogin (PlayerClientLoadedWorldEvent event) {
-		if (event.isTimeout()) return;
-		WarpManager.get("lobby").warp(event.getPlayer());
+	public void onLogin (PlayerJoinEvent event) {
+		Bukkit.getScheduler().runTaskLater(PluginLoader.PLUGIN, () -> WarpManager.warp(event.getPlayer(),"lobby"),5);
 	}
 	
 }

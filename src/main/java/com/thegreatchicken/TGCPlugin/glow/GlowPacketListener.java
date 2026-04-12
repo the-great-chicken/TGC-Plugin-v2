@@ -33,7 +33,6 @@ public class GlowPacketListener implements PacketListener {
             Glow glow = getGlowByEntityID(id);
             if (glow == null || player1 == null || !glow.seeGlow(player1.getUniqueId()) ||
                 glow.getGlow(player1.getUniqueId()).team() == null) continue;
-            client.sendMessage("team packet canceled");
             result = true;
         }
         event.setCancelled(result);
