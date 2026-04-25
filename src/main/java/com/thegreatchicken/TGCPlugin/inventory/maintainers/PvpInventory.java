@@ -2,6 +2,8 @@ package com.thegreatchicken.TGCPlugin.inventory.maintainers;
 
 import java.util.Set;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.UseCooldown;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -16,6 +18,8 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.thegreatchicken.TGCPlugin.inventory.InventoryMaintainer;
+
+import static com.thegreatchicken.TGCPlugin.glow.GlowCommand.GlowCooldown;
 
 public class PvpInventory extends InventoryMaintainer {
 
@@ -51,9 +55,8 @@ public class PvpInventory extends InventoryMaintainer {
 		
 		Material material = item.getType();
 		if (material != Material.DRAGON_BREATH) return ;
-	
 		Player player = event.getPlayer();
-		
+		item.setData(DataComponentTypes.USE_COOLDOWN, UseCooldown.useCooldown(GlowCooldown).build());
 		player.performCommand("useglow");
 	}
 	

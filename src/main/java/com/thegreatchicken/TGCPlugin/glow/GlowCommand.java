@@ -27,7 +27,7 @@ public final class GlowCommand {
     private static final FileConfiguration config = PluginLoader.PLUGIN.getConfig();
     private static final Long GlowTime = config.getLong("glow.time");
     private static final Integer MinDistance = config.getInt("glow.minDistance");
-    private static final long GlowCooldown = config.getLong("glow.cooldown");
+    public static final long GlowCooldown = config.getLong("glow.cooldown");
     private static final NamedTextColor GlowColor = NamedTextColor.NAMES.value(config.getString("glow.color","white"));
     private static boolean UseGlow = true;
     private static final Map<UUID,Long> playerGlowUse = new HashMap();
@@ -82,9 +82,12 @@ public final class GlowCommand {
         registry.register(glow_command,"make a entity glow for a specific player and amount of time");
 
         var use_glow = Commands.literal("useglow")
-                .requires(source -> source.getSender() instanceof Player)
                 .executes(ctx -> {
-                    if (!UseGlow) ctx.getSource().getSender().sendMessage(text("Glow use not enabled").color(NamedTextColor.RED));
+                    if (!UseGlow) {
+                        ctx.getSource().getSender().sendMessage(text("Glow use not enabled").color(NamedTextColor.RED));
+                        return Command.SINGLE_SUCCESS;
+                    }
+                    if (!(ctx.getSource().getExecutor() instanceof Player)) return Command.SINGLE_SUCCESS;
                     Player player = (Player) ctx.getSource().getExecutor();
                     if (playerGlowUse.containsKey(player.getUniqueId())) {
                         long startTime = playerGlowUse.get(player.getUniqueId());

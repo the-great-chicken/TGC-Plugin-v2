@@ -1,8 +1,11 @@
 package com.thegreatchicken.TGCPlugin;
 
 import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.EventManager;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.thegreatchicken.TGCPlugin.glow.GlowCommand;
 import com.thegreatchicken.TGCPlugin.glow.GlowListener;
+import com.thegreatchicken.TGCPlugin.glow.GlowPacketListener;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
@@ -59,10 +62,11 @@ public class PluginLoader extends JavaPlugin {
 
 	@Override
 	public void onEnable () {
-		PacketEvents.getAPI().init();
 		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,command -> {
 			GlowCommand.commandRegister(command.registrar());
 		});
+		EventManager events = PacketEvents.getAPI().getEventManager();
+		events.registerListener(new GlowPacketListener(), PacketListenerPriority.NORMAL);
 
 		running_procedure("LOAD_SERVER");
 		BUKKIT_SERVER = this.getServer();

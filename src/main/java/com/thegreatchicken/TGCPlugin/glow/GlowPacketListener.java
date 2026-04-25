@@ -23,7 +23,6 @@ public class GlowPacketListener implements PacketListener {
 
     public void onTeamPacketSend(PacketSendEvent event){
         var packet = new WrapperPlayServerTeams(event);
-        Player client = event.getPlayer();
         String[] players = packet.getPlayers().toArray(new String[0]);
         boolean result = false;
         for (String player: players){
