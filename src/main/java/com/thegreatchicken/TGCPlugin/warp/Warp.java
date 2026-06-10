@@ -3,6 +3,7 @@ package com.thegreatchicken.TGCPlugin.warp;
 import java.io.IOException;
 import java.io.Writer;
 
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -15,9 +16,10 @@ public class Warp {
 	public final String name;
 	public final String world_name;
 	public final float x, y, z, yaw, pitch;
-	
+
+	@Getter
 	private final Location warp_pos;
-	
+
 	public Warp (
 			String name, String world_name, 
 			float x, float y, float z, float yaw, float pitch

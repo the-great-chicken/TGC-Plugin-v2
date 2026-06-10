@@ -1,19 +1,20 @@
 package com.thegreatchicken.TGCPlugin;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.thegreatchicken.TGCPlugin.glow.Glow;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.EventManager;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.thegreatchicken.TGCPlugin.glow.GlowCommand;
 import com.thegreatchicken.TGCPlugin.glow.GlowListener;
+import com.thegreatchicken.TGCPlugin.glow.GlowPacketListener;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import org.bukkit.Server;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.thegreatchicken.TGCPlugin.inventory.InventoryListener;
 import com.thegreatchicken.TGCPlugin.inventory.InventoryValidator;
-import com.thegreatchicken.TGCPlugin.inventory.enchantments.GlowEnchantment;
 import com.thegreatchicken.TGCPlugin.listeners.ClearPreprocessor;
 import com.thegreatchicken.TGCPlugin.listeners.DeathListener;
 import com.thegreatchicken.TGCPlugin.listeners.HeatMap;
@@ -24,8 +25,6 @@ import com.thegreatchicken.TGCPlugin.warp.commands.ListWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.RemoveWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.StatusWarpCommand;
 import com.thegreatchicken.TGCPlugin.warp.commands.UseWarpCommand;
-
-import static com.thegreatchicken.TGCPlugin.glow.Glow.registerGlowListener;
 
 @Getter
 public class PluginLoader extends JavaPlugin {
@@ -56,17 +55,18 @@ public class PluginLoader extends JavaPlugin {
 		config( "" );
 	}
 
-	public static ProtocolManager PROTOCOL_MANAGER;
-
 	@Override
 	public void onLoad() {
 		PLUGIN = this;
-		PROTOCOL_MANAGER = ProtocolLibrary.getProtocolManager();
 	}
 
 	@Override
 	public void onEnable () {
-		GlowCommand.CommandRegister();
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,command -> {
+			GlowCommand.commandRegister(command.registrar());
+		});
+		EventManager events = PacketEvents.getAPI().getEventManager();
+		events.registerListener(new GlowPacketListener(), PacketListenerPriority.NORMAL);
 
 		running_procedure("LOAD_SERVER");
 		BUKKIT_SERVER = this.getServer();
@@ -90,8 +90,6 @@ public class PluginLoader extends JavaPlugin {
 		end_procedure();
 		
 		running_procedure("LOAD_PACKET_LISTENER");
-
-		registerGlowListener(PROTOCOL_MANAGER);
 		
 		end_procedure();
 		
@@ -109,10 +107,6 @@ public class PluginLoader extends JavaPlugin {
 		
 		HeatMap heatmap = new HeatMap();
 		heatmap.runLater();
-		end_procedure();
-		
-		running_procedure("ADD_ENCHANTMENTS");
-		GlowEnchantment.registerEnchantment();
 		end_procedure();
 		
 		running_procedure("GLOW_CONFIG");

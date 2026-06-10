@@ -1,142 +1,151 @@
 package com.thegreatchicken.TGCPlugin.glow;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.thegreatchicken.TGCPlugin.PluginLoader;
-import dev.jorel.commandapi.CommandTree;
-import dev.jorel.commandapi.arguments.*;
-import dev.jorel.commandapi.executors.CommandArguments;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.ChatFormatting;
-import net.minecraft.util.Tuple;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
+import static net.kyori.adventure.text.Component.text;
 
 public final class GlowCommand {
     private static final FileConfiguration config = PluginLoader.PLUGIN.getConfig();
     private static final Long GlowTime = config.getLong("glow.time");
     private static final Integer MinDistance = config.getInt("glow.minDistance");
-    private static final long GlowCooldown = config.getLong("glow.cooldown");
-    private static final ChatFormatting GlowColor = ChatFormatting.getByName(config.getString("glow.color"));
+    public static final long GlowCooldown = config.getLong("glow.cooldown");
+    private static final NamedTextColor GlowColor = NamedTextColor.NAMES.value(config.getString("glow.color","white"));
     private static boolean UseGlow = true;
-    private static final List<UUID> playerGlowUse = new ArrayList<>();
+    private static final Map<UUID,Long> playerGlowUse = new HashMap();
 
-
-    public static void CommandRegister(){
-
-        if (GlowColor==null || !GlowColor.isColor())
-            throw new IllegalArgumentException("Invalid color in config.yml");
-
-        new CommandTree("glow")
-                .withPermission("tgcplugin.glow")
-                .then(new LiteralArgument("add")
-                        .then(new EntitySelectorArgument.ManyPlayers("clients")
-                                .then(new EntitySelectorArgument.ManyEntities("entities")
-                                        .executes((sender, args) -> {
-                                            addGlow( args, null);
-                                        })
-                                        .then(new ChatColorArgument("color")
-                                                .executes((sender, args) -> {
-                                                    ChatColor color = args.getUnchecked("color");
-                                                    ChatFormatting chatFormatting = ChatFormatting.getByName(color.name());
-                                                    addGlow(args, chatFormatting);
-
+    public static void commandRegister(Commands registry) {
+        var glow_command = Commands.literal("glow")
+                .requires(source -> source.getSender().hasPermission("tgcplugin.glow"))
+                .then(Commands.literal("add")
+                        .then(Commands.argument("client",ArgumentTypes.players())
+                                .then(Commands.argument("entities",ArgumentTypes.entities())
+                                        .executes(context ->
+                                            addGlow( context, null)
+                                        )
+                                        .then(Commands.argument("color",ArgumentTypes.namedColor())
+                                                .executes(ctx -> {
+                                                    NamedTextColor color =ctx.getArgument("color",NamedTextColor.class);
+                                                    return addGlow(ctx, color);
                                                 })
-
                                         )
                                 )
                         )
-                ).then(new LiteralArgument("time")
-                        .then(new EntitySelectorArgument.ManyPlayers("clients")
-                                .then(new EntitySelectorArgument.ManyEntities("entities")
-                                        .then(new TimeArgument("duration")
-                                                .executes((sender, args) -> {
-                                                    addGlowTime(args,null);
-                                                }).then(new ChatColorArgument("color")
-                                                        .executes((sender, args) -> {
-                                                            ChatColor color = args.getUnchecked("color");
-                                                            ChatFormatting chatFormatting = ChatFormatting.getByName(color.name());
-                                                            addGlowTime(args, chatFormatting);
-                                                        })
-                                                )
+                ).then(Commands.literal("time")
+                        .then(Commands.argument("client",ArgumentTypes.players())
+                                .then(Commands.argument("entities",ArgumentTypes.entities())
+                                        .then(Commands.argument("duration",ArgumentTypes.time())
+                                                .executes(ctx ->
+                                                    addGlowTime(ctx,null)
+                                                ).then(Commands.argument("color",ArgumentTypes.namedColor())
+                                                    .executes(ctx -> {
+                                                        NamedTextColor color = ctx.getArgument("color",NamedTextColor.class);
+                                                        return addGlowTime(ctx, color);
+                                                    })
+                                            )
                                         )
                                 )
                         )
                 )
-                .then(new LiteralArgument("remove")
-                        .then(new EntitySelectorArgument.ManyEntities("entities")
-                                .executes((sender, args) -> {
-                                    List<Entity> entities = args.getUnchecked("entities");
+                .then(Commands.literal("remove")
+                        .then(Commands.argument("entities",ArgumentTypes.entities())
+                                .executes((ctx -> {
+                                    final var entitySelectorArgumentResolver = ctx.getArgument("entities", EntitySelectorArgumentResolver.class);
+                                    final List<Entity> entities = entitySelectorArgumentResolver.resolve(ctx.getSource());
                                     for (Entity entity : entities){
                                         Glow.removeGlow(entity);
                                     }
-
+                                    return Command.SINGLE_SUCCESS;
                                 })
                         )
 
-                ).register();
+                )).build();
 
-        new CommandTree("useglow")
-                .executesPlayer((player, args) -> {
-                    if (!UseGlow) return;
-                    if (playerGlowUse.contains(player.getUniqueId())) {
-                        TextComponent textComponent = new TextComponent();
-                        textComponent.setText("You can't use glow now");
-                        textComponent.setColor(net.md_5.bungee.api.ChatColor.RED);
-                        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, textComponent);
-                        return;
+        registry.register(glow_command,"make a entity glow for a specific player and amount of time");
+
+        var use_glow = Commands.literal("useglow")
+                .executes(ctx -> {
+                    if (!UseGlow) {
+                        ctx.getSource().getSender().sendMessage(text("Glow use not enabled").color(NamedTextColor.RED));
+                        return Command.SINGLE_SUCCESS;
                     }
-
-                    HashMap<Player, Tuple<ChatFormatting,Long>> playerChatFormattingHashMap = new HashMap<>();
-                    playerChatFormattingHashMap.put(player,new Tuple<>(GlowColor,GlowTime));
+                    if (!(ctx.getSource().getExecutor() instanceof Player)) return Command.SINGLE_SUCCESS;
+                    Player player = (Player) ctx.getSource().getExecutor();
+                    if (playerGlowUse.containsKey(player.getUniqueId())) {
+                        long startTime = playerGlowUse.get(player.getUniqueId());
+                        long time = startTime - System.currentTimeMillis() + GlowCooldown*50;
+                        Component time_text = text(time/1000+"s").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD);
+                        player.sendActionBar(text("You need to wait ").color(NamedTextColor.RED).append(time_text));
+                        return Command.SINGLE_SUCCESS;
+                    }
+                    HashMap<Player, Pair<NamedTextColor,Long>> playerChatFormattingHashMap = new HashMap<>();
+                    playerChatFormattingHashMap.put(player,new MutablePair<>(GlowColor,GlowTime));
                     for (Entity entity : Bukkit.getOnlinePlayers()){
-                        if (entity.getLocation().distance(player.getLocation()) < MinDistance) continue;
-                        Glow.setGlowTime( entity,playerChatFormattingHashMap);
+                        if (entity.getLocation().distance(player.getLocation()) > MinDistance)
+                            Glow.setGlowTime( entity,playerChatFormattingHashMap);
                     }
-
-                    playerGlowUse.add(player.getUniqueId());
+                    playerGlowUse.put(player.getUniqueId(),System.currentTimeMillis());
                     GlowCooldown(player);
-
-                }).then(new LiteralArgument("toggle")
-                        .withPermission("tgcplugin.glow")
-                        .executes(((sender, args) -> {
+                    return Command.SINGLE_SUCCESS;
+                })
+                .then(Commands.literal("toggle")
+                        .requires(source -> source.getSender().hasPermission("tgcplugin.glow"))
+                        .executes(ctx -> {
                             UseGlow = !UseGlow;
-                            sender.sendMessage(ChatColor.GREEN + "Glow : " + (UseGlow ? "on" : "off"));
-                        }))).register();
+                            ctx.getSource().getSender().sendMessage(text("Glow : " + (UseGlow ? "on" : "off")).color(NamedTextColor.GREEN));
+                            return Command.SINGLE_SUCCESS;
+                        })).build();
+        registry.register(use_glow,"allows the player to spot other players around them");
     }
 
-    private static void addGlow(CommandArguments args, ChatFormatting chatFormatting) {
-        List<Player> players = args.getUnchecked("clients");
-        List<Entity> entities = args.getUnchecked("entities");
-        HashMap<Player, ChatFormatting> playerChatFormattingHashMap = new HashMap<>();
+    private static int addGlow(CommandContext<CommandSourceStack> ctx,NamedTextColor color) throws CommandSyntaxException {
+        final var playerSelectorArgumentResolver = ctx.getArgument("client", PlayerSelectorArgumentResolver.class);
+        final List<Player> players = playerSelectorArgumentResolver.resolve(ctx.getSource());
+        final var entitySelectorArgumentResolver = ctx.getArgument("entities", EntitySelectorArgumentResolver.class);
+        final List<Entity> entities = entitySelectorArgumentResolver.resolve(ctx.getSource());
+        HashMap<Player, NamedTextColor> playerColorHashMap = new HashMap<>();
         for (Player player : players){
-            playerChatFormattingHashMap.put(player,chatFormatting);
+            playerColorHashMap.put(player,color);
         }
         for (Entity entity : entities){
-            Glow.setGlow(entity,playerChatFormattingHashMap);
+            Glow.setGlow(entity,playerColorHashMap);
         }
+        return Command.SINGLE_SUCCESS;
     }
 
-    private static void addGlowTime(CommandArguments args, ChatFormatting chatFormatting) {
-        List<Player> players = args.getUnchecked("clients");
-        List<Entity> entities = args.getUnchecked("entities");
-        Integer duration = args.getUnchecked("duration");
-        Tuple<ChatFormatting,Long> tuple = new Tuple<>(chatFormatting,duration.longValue());
-        HashMap<Player, Tuple<ChatFormatting,Long>> playerChatFormattingHashMap = new HashMap<>();
+    private static int addGlowTime(CommandContext<CommandSourceStack> ctx, NamedTextColor color) throws CommandSyntaxException {
+        final var playerSelectorArgumentResolver = ctx.getArgument("client", PlayerSelectorArgumentResolver.class);
+        final List<Player> players = playerSelectorArgumentResolver.resolve(ctx.getSource());
+        final var entitySelectorArgumentResolver = ctx.getArgument("entities", EntitySelectorArgumentResolver.class);
+        final List<Entity> entities = entitySelectorArgumentResolver.resolve(ctx.getSource());
+        Integer duration = ctx.getArgument("duration",Integer.class);
+        Pair<NamedTextColor,Long> tuple = new MutablePair<>(color,duration.longValue());
+        HashMap<Player, Pair<NamedTextColor,Long>> playerChatFormattingHashMap = new HashMap<>();
         for (Player player : players){
             playerChatFormattingHashMap.put(player,tuple);
         }
         for (Entity entity : entities){
             Glow.setGlowTime(entity,playerChatFormattingHashMap);
         }
+        return Command.SINGLE_SUCCESS;
     }
 
     private static void GlowCooldown(Player player) {

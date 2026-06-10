@@ -62,8 +62,8 @@ public class HeatMap implements Runnable {
 		this.runLater();
 	}
 	
-	public static final String HEATMAP_FILE   = "plugins/tgc/heatmap.txt";
-	public static final String HEATMAP_FOLDER = "plugins/tgc";
+	public static final String HEATMAP_FILE   = "plugins/TGCPlugin/heatmap.txt";
+	public static final String HEATMAP_FOLDER = "plugins/TGCPlugin";
 	
 	public static void create () {
 		File folder = new File(HEATMAP_FOLDER);

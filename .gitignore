@@ -6,3 +6,5 @@ target
 /server/
 /ServerPlugin.iml
 /TGCPlugin.iml
+.idea/
+.vscode/

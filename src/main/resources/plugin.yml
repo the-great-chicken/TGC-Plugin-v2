@@ -1,9 +1,9 @@
 main: com.thegreatchicken.TGCPlugin.PluginLoader
 name: TGCPlugin
 description: Handle TGC-PVP Related systems
-version: 1.21.1
-api-version: 1.13
-depend: [ ProtocolLib, FastAsyncWorldEdit, CommandAPI ]
+version: 26.1.2
+api-version: 26.1.2
+depend: [packetevents,FastAsyncWorldEdit]
 commands:
    usewarp:
       description: Use a warp
