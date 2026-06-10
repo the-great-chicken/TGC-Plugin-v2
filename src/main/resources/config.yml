@@ -3,3 +3,5 @@ glow:
   cooldown: 200
   minDistance: 8
   color: WHITE
+  timeText: "You need to wait %ds"
+  disabledMessage: "Glow use not enabled"
