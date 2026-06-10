@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.tgc</groupId>
   <artifactId>TGCPlugin</artifactId>
-  <version>1.21.11-SNAPSHOT</version>
+  <version>26.1.2</version>
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -43,6 +43,22 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputDirectory>server\plugins</outputDirectory>
+                </configuration>
             </plugin>
         </plugins>
         <resources>
@@ -86,7 +102,7 @@
        <dependency>
            <groupId>io.papermc.paper</groupId>
            <artifactId>paper-api</artifactId>
-           <version>1.21.11-R0.1-SNAPSHOT</version>
+           <version>[26.1.2.build,)</version>
            <scope>provided</scope>
        </dependency>
        

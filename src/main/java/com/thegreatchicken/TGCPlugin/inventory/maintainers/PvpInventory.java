@@ -56,7 +56,9 @@ public class PvpInventory extends InventoryMaintainer {
 		Material material = item.getType();
 		if (material != Material.DRAGON_BREATH) return ;
 		Player player = event.getPlayer();
-		item.setData(DataComponentTypes.USE_COOLDOWN, UseCooldown.useCooldown(GlowCooldown).build());
+		if (player.getCooldown(item) <= 0) {
+			player.setCooldown(item, (int)GlowCooldown);
+		}
 		player.performCommand("useglow");
 	}
 	
