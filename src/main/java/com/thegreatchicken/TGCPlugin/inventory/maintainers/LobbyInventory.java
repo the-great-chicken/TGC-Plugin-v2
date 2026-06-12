@@ -19,21 +19,14 @@ import com.thegreatchicken.TGCPlugin.warp.DeferedWarp;
 
 public class LobbyInventory extends InventoryMaintainer {
 
-	@EventHandler
-	public void onDrop (PlayerDropItemEvent event) {  }
-	@EventHandler
-	public void onPickup (PlayerPickupItemEvent event) {  }
-	@EventHandler
 	public void onChange (InventoryClickEvent event) {
 		event.setCancelled(true);
 		event.getWhoClicked().closeInventory();
 	}
-	@EventHandler
 	public void onDrag (InventoryDragEvent event) {
 		event.setCancelled(true);
 		event.getWhoClicked().closeInventory();
 	}
-	@EventHandler
 	public void onPlayerUse(PlayerInteractEvent event) {
 		ItemStack item = event.getItem();
 		if (item == null) return ;
@@ -47,8 +40,7 @@ public class LobbyInventory extends InventoryMaintainer {
 		   .runLater();
 	}
 
-	@EventHandler
-	public void onItemSwap(PlayerSwapHandItemsEvent event) {
+	public void onHandSwitch(PlayerSwapHandItemsEvent event) {
 		Player player = event.getPlayer();
 		if (player.getInventory().getItem(4).getType() == Material.DRAGON_BREATH
 		 && player.getInventory().getItem(4).getItemMeta().getDisplayName().equals(
