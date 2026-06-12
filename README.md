@@ -24,4 +24,6 @@ glow: #all the parameter of the useglow and glow command
   cooldown: 200 #the time to wait before reusing the useglow command in ticks
   minDistance: 8 #the minimum distance a player must be from to be glowed
   color: WHITE #the default color to use when not specified
+  timeText: "You need to wait %ds" #the message send when useglow is reloading (%d is the time remaining)
+  disabledMessage: "Glow use not enabled" # the message to send when useglow is disabled
 ```

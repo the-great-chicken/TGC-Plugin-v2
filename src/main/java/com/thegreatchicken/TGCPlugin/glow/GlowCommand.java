@@ -15,9 +15,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -25,9 +27,11 @@ import static net.kyori.adventure.text.Component.text;
 
 public final class GlowCommand {
     private static final FileConfiguration config = PluginLoader.PLUGIN.getConfig();
-    private static final Long GlowTime = config.getLong("glow.time");
-    private static final Integer MinDistance = config.getInt("glow.minDistance");
-    public static final long GlowCooldown = config.getLong("glow.cooldown");
+    private static final Long glowTime = config.getLong("glow.time");
+    private static final Integer minDistance = config.getInt("glow.minDistance");
+    public static final long glowCooldown = config.getLong("glow.cooldown");
+    public static final @NotNull String glowTimeText = config.getString("glow.timeText","You need to wait %ds");
+    public static final @NotNull String useglowDisabledMessage = config.getString("glow.disabledMessage","Glow use not enabled");
     private static final NamedTextColor GlowColor = NamedTextColor.NAMES.value(config.getString("glow.color","white"));
     private static boolean UseGlow = true;
     private static final Map<UUID,Long> playerGlowUse = new HashMap();
@@ -84,23 +88,27 @@ public final class GlowCommand {
         var use_glow = Commands.literal("useglow")
                 .executes(ctx -> {
                     if (!UseGlow) {
-                        ctx.getSource().getSender().sendMessage(text("Glow use not enabled").color(NamedTextColor.RED));
+                        ctx.getSource().getSender().sendMessage(text(useglowDisabledMessage).color(NamedTextColor.RED));
                         return Command.SINGLE_SUCCESS;
                     }
                     if (!(ctx.getSource().getExecutor() instanceof Player)) return Command.SINGLE_SUCCESS;
                     Player player = (Player) ctx.getSource().getExecutor();
                     if (playerGlowUse.containsKey(player.getUniqueId())) {
                         long startTime = playerGlowUse.get(player.getUniqueId());
-                        long time = startTime - System.currentTimeMillis() + GlowCooldown*50;
-                        Component time_text = text(time/1000+"s").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD);
-                        player.sendActionBar(text("You need to wait ").color(NamedTextColor.RED).append(time_text));
+                        long time = startTime - System.currentTimeMillis() + glowCooldown *50;
+                        String[] formated = glowTimeText.split("%d");
+                        Component time_text = text((time/1000+1)+formated[1]).color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD);
+                        player.sendActionBar(text(formated[0]).color(NamedTextColor.RED).append(time_text));
                         return Command.SINGLE_SUCCESS;
                     }
                     HashMap<Player, Pair<NamedTextColor,Long>> playerChatFormattingHashMap = new HashMap<>();
-                    playerChatFormattingHashMap.put(player,new MutablePair<>(GlowColor,GlowTime));
+                    playerChatFormattingHashMap.put(player,new MutablePair<>(GlowColor, glowTime));
                     for (Entity entity : Bukkit.getOnlinePlayers()){
-                        if (entity.getLocation().distance(player.getLocation()) > MinDistance)
+                        if (entity.getLocation().distance(player.getLocation()) > minDistance)
                             Glow.setGlowTime( entity,playerChatFormattingHashMap);
+                    }
+                    if (player.getCooldown(Material.DRAGON_BREATH) <= 0) {
+                        player.setCooldown(Material.DRAGON_BREATH, (int) glowCooldown);
                     }
                     playerGlowUse.put(player.getUniqueId(),System.currentTimeMillis());
                     GlowCooldown(player);
@@ -151,6 +159,6 @@ public final class GlowCommand {
     private static void GlowCooldown(Player player) {
         Bukkit.getScheduler().runTaskLater(PluginLoader.PLUGIN, () -> {
             playerGlowUse.remove(player.getUniqueId());
-        }, GlowCooldown);
+        }, glowCooldown);
     }
 }
