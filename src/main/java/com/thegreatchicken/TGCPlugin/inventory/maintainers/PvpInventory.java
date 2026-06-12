@@ -29,21 +29,19 @@ public class PvpInventory extends InventoryMaintainer {
 	};
 
 
-	@EventHandler
 	public void onDrop (PlayerDropItemEvent event) {
 		if (event.getItemDrop().getItemStack().getType() != Material.DRAGON_BREATH) return ;
 		event.getItemDrop().remove();
 		event.setCancelled(true);
 		event.getPlayer().closeInventory();
 	}
-	@EventHandler
+
 	public void onChange (InventoryClickEvent event) {
 		if (event.getSlot() != 8) return ;
 		if (!(event.getInventory() instanceof PlayerInventory) && !(event.getInventory() instanceof CraftingInventory)) return ;
 		event.setCancelled(true);
 		event.getWhoClicked().closeInventory();
 	}
-	@EventHandler
 	public void onDrag (InventoryDragEvent event) {
 		Set<Integer> slots = event.getInventorySlots();
 		if (!(event.getInventory() instanceof PlayerInventory)) return ;
@@ -52,14 +50,12 @@ public class PvpInventory extends InventoryMaintainer {
 		event.setCancelled(true);
 	}
 
-	@EventHandler
-	public void onInventoryChange(PlayerInventorySlotChangeEvent event) {
+	public void onItemChange(PlayerInventorySlotChangeEvent event) {
 		if (event.getSlot() == 8){
 			event.getPlayer().getInventory().setItem(8,OSLP);
 		}
 	}
 	
-	@EventHandler
 	public void onPlayerUse(PlayerInteractEvent event) {
 		ItemStack item = event.getItem();
 		if (item == null || !event.getAction().isRightClick()) return ;
@@ -70,46 +66,13 @@ public class PvpInventory extends InventoryMaintainer {
 		player.performCommand("useglow");
 	}
 	
-	@EventHandler
-	public void onItemSwap(PlayerSwapHandItemsEvent event) {
-		Player player = event.getPlayer();
-		if (player.getInventory().getItem(8).getType() == Material.DRAGON_BREATH
-		 && player.getInventory().getItem(8).getItemMeta().getDisplayName().equals(
-			ChatColor.RESET + "" + ChatColor.AQUA + "Où sont les poulets ?"
-		 )) return ;
-
+	public void onHandSwitch(PlayerSwapHandItemsEvent event) {
+		if (event.getOffHandItem().getType() != Material.DRAGON_BREATH) return ;
 		event.setCancelled(true);
 	}
 
 	public void onLoad (Player player) {
-
-		
 		player.getInventory().setItem(8, OSLP);
-	}
-	public void onTick (Player player) {
-		ItemStack compass = player.getInventory().getItem(8);
-		if (compass == null || compass.getType() != Material.DRAGON_BREATH)
-			onLoad(player);
-		
-		compass = player.getInventory().getItem(8);
-		
-		/*boolean enchanted = !GlowManager.isInCooldown(player);
-		ItemMeta meta = compass.getItemMeta();
-		if (enchanted) {
-			Map<Enchantment, Integer> enchants = meta.getEnchants();
-			
-			if (enchants.size() == 0) {
-				GlowEnchantment enchant = new GlowEnchantment();
-				
-				meta.addEnchant(enchant, 1, true);
-			}
-		} else if (!enchanted) {
-			Map<Enchantment, Integer> enchants = meta.getEnchants();
-			
-			for (Enchantment enchant : enchants.keySet())
-				meta.removeEnchant(enchant);
-		}*/
-		//compass.setItemMeta(meta);
 	}
 
 }

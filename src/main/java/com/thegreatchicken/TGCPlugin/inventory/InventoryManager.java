@@ -2,6 +2,8 @@ package com.thegreatchicken.TGCPlugin.inventory;
 
 import java.util.HashMap;
 
+import com.thegreatchicken.TGCPlugin.PluginLoader;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -28,7 +30,6 @@ public class InventoryManager {
 	}
 	public static void useMaintainer (Player player, InventoryMaintainer maintainer) {
 		maintainers.put(player, maintainer);
-		
 		maintainer.onLoad(player);
 	}
 	public static void onWarp (Player player, String warp) {
@@ -36,47 +37,6 @@ public class InventoryManager {
 			useMaintainer(player, new LobbyInventory());
 		if (warp.equals("pvp"))
 			useMaintainer(player, new PvpInventory());
-	}
-	
-	public static void onDrop (PlayerDropItemEvent event) {
-		InventoryMaintainer maintainer = getMaintainer(event.getPlayer());
-		
-		if (maintainer == null) return ;
-		maintainer.onDrop(event);
-	}
-	public static void onPickup (PlayerPickupItemEvent event) {
-		InventoryMaintainer maintainer = getMaintainer(event.getPlayer());
-		
-		if (maintainer == null) return ;
-		maintainer.onPickup(event);
-	}
-	public static void onChange (InventoryClickEvent event) {
-		HumanEntity entity = event.getWhoClicked();
-		if (!(entity instanceof Player)) return ;
-		InventoryMaintainer maintainer = getMaintainer((Player) entity);
-		
-		if (maintainer == null) return ;
-		maintainer.onChange(event);
-	}
-	public static void onDrag (InventoryDragEvent event) {
-		HumanEntity entity = event.getWhoClicked();
-		if (!(entity instanceof Player)) return ;
-		InventoryMaintainer maintainer = getMaintainer((Player) entity);
-		
-		if (maintainer == null) return ;
-		maintainer.onDrag(event);
-	}
-	public static void onPlayerUse(PlayerInteractEvent event) {
-		InventoryMaintainer maintainer = getMaintainer(event.getPlayer());
-		
-		if (maintainer == null) return ;
-		maintainer.onPlayerUse(event);
-	}
-	public static void onHandSwitch (PlayerSwapHandItemsEvent event) {
-		InventoryMaintainer maintainer = getMaintainer(event.getPlayer());
-		
-		if (maintainer == null) return ;
-		maintainer.onHandSwitch(event);
 	}
 	
 }
