@@ -14,6 +14,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Team;
+import org.jetbrains.annotations.NotNull;
 
 import static com.thegreatchicken.TGCPlugin.glow.PacketUtils.*;
 
@@ -22,11 +23,11 @@ import java.util.*;
 public class Glow {
 
     private static final HashMap<Integer,Glow> glowMap = new HashMap<>();
-    private final HashMap<UUID, GlowInstance> players;
+    private final @NotNull HashMap<UUID, GlowInstance> players;
     @Getter
     private final Entity glowEntity;
 
-    private Glow(Entity entity, HashMap<Player, Pair<NamedTextColor,Long>> players) {
+    private Glow(Entity entity, @NotNull HashMap<Player, Pair<NamedTextColor,Long>> players) {
         this.glowEntity = entity;
         HashMap<UUID, GlowInstance> Teams = new HashMap<>();
         for (Map.Entry<Player, Pair<NamedTextColor, Long>> entry : players.entrySet()) {
@@ -39,7 +40,6 @@ public class Glow {
             var instance = new GlowInstance(createTeam(color),id);
             addGlow(entry.getKey(), instance);
             Teams.put(entry.getKey().getUniqueId(), instance);
-
         }
         this.players = Teams;
 
@@ -57,8 +57,7 @@ public class Glow {
         return setGlowTime(entity,teams);
     }
 
-    @SuppressWarnings("DataFlowIssue")
-    public static Glow setGlowTime(Entity entity, HashMap<Player,Pair<NamedTextColor,Long>> players){
+    public static Glow setGlowTime(Entity entity,@NotNull HashMap<Player,Pair<NamedTextColor,Long>> players){
         Integer uid = entity.getEntityId();
         if (glowMap.containsKey(uid)){
             Glow glow = glowMap.get(uid);

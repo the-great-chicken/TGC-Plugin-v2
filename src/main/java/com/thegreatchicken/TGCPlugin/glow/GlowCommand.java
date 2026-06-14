@@ -32,7 +32,7 @@ public final class GlowCommand {
     public static final long glowCooldown = config.getLong("glow.cooldown");
     public static final @NotNull String glowTimeText = config.getString("glow.timeText","You need to wait %ds");
     public static final @NotNull String useglowDisabledMessage = config.getString("glow.disabledMessage","Glow use not enabled");
-    private static final NamedTextColor GlowColor = NamedTextColor.NAMES.value(config.getString("glow.color","white"));
+    private static final NamedTextColor GlowColor = NamedTextColor.NAMES.valueOr(config.getString("glow.color","white"),NamedTextColor.WHITE);
     private static boolean UseGlow = true;
     private static final Map<UUID,Long> playerGlowUse = new HashMap();
 
