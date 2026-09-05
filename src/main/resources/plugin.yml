@@ -3,7 +3,7 @@ name: TGCPlugin
 description: Handle TGC-PVP Related systems
 version: 26.1.2
 api-version: 26.1.2
-depend: [packetevents,FastAsyncWorldEdit]
+depend: [packetevents]
 commands:
    usewarp:
       description: Use a warp
@@ -20,6 +20,3 @@ commands:
    listwarp:
       description: List existing warps
       usage: /listwarp
-   webrush:
-      description: Apply a World Edit Brush to a specific location
-      usage: /webrush <x> <y> <z> <name> [...args]
