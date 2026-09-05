@@ -28,6 +28,8 @@ import com.thegreatchicken.TGCPlugin.warp.commands.UseWarpCommand;
 
 @Getter
 public class PluginLoader extends JavaPlugin {
+
+    private com.thegreatchicken.TGCPlugin.cosmetics.CosmeticHttpServer cosmeticHttpServer;
 	
 	public static Server BUKKIT_SERVER;
 	public static PluginLoader PLUGIN ;
@@ -112,9 +114,18 @@ public class PluginLoader extends JavaPlugin {
 		running_procedure("GLOW_CONFIG");
 		this.saveDefaultConfig();
 		end_procedure();
+		if (getConfig().getBoolean("cosmetics.enabled", false)) {
+			try {
+				cosmeticHttpServer = com.thegreatchicken.TGCPlugin.cosmetics.CosmeticHttpServer.start(this);
+				getLogger().info("Private cosmetic bridge started");
+			} catch (java.io.IOException | RuntimeException e) {
+				getLogger().severe("Cosmetic bridge disabled: " + e.getMessage());
+			}
+		}
 	}
 	@Override
 	public void onDisable () {
+		if (cosmeticHttpServer != null) cosmeticHttpServer.close();
 		running_procedure("SAVE_WARP");
 		WarpManager.save();
 		end_procedure();

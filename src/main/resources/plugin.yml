@@ -1,9 +1,9 @@
 main: com.thegreatchicken.TGCPlugin.PluginLoader
 name: TGCPlugin
 description: Handle TGC-PVP Related systems
-version: 26.1.2
+version: '${project.version}'
 api-version: 26.1.2
-depend: [packetevents]
+depend: [packetevents, DiscordSRV]
 commands:
    usewarp:
       description: Use a warp
