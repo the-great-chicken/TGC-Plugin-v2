@@ -3,6 +3,16 @@
 
 The Great Chicken plugin for SGP
 
+## Build and releases
+
+Build with Java 25 and `mvn clean verify`; the JAR is written to `target/`. Change the version in `pom.xml` using the format `26.1.2-1.1` and push to `main` to publish a GitHub release with the JAR attached. Maven fills in `plugin.yml` automatically.
+
+## Website cosmetics
+
+Requires Paper, DiscordSRV and PacketEvents. In `config.yml`, enable `cosmetics.enabled` and set `cosmetics.secret` to a random base64url secret of at least 32 characters. Set the same secret in the website's `COSMETICS_BRIDGE_SECRET` and point `COSMETICS_BRIDGE_URL` at the private listener (default `http://127.0.0.1:8766`). Restart to apply configuration changes.
+
+`cosmetics.datapack` names the enabled directory under the primary world's `datapacks` folder (default `TGCdatapack`). Cosmetics are read from its declarations and equip hooks on startup and datapack reload. Players must be online to change equipment.
+
 ## Glowing
 This part of the plugin provides player-specific glowing.
 It allows entities to appear glowing only for specific players, and optionally with a specific color, without modifying player teams.
