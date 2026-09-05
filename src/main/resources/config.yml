@@ -5,3 +5,12 @@ glow:
   color: WHITE
   timeText: "You need to wait %ds"
   disabledMessage: "Glow use not enabled"
+
+# Private website bridge. Share the secret with SGP's server-side environment.
+cosmetics:
+  enabled: false
+  # Directory under the primary world's datapacks folder; refreshed on datapack reload.
+  datapack: "TGCdatapack"
+  bind: "127.0.0.1"
+  port: 8766
+  secret: ""

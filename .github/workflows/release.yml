@@ -1,0 +1,132 @@
+name: Release plugin
+
+on:
+  push:
+    branches: [main]
+    paths: [pom.xml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      changed: ${{ steps.version.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Detect project version change
+        id: version
+        env:
+          BEFORE: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          import xml.etree.ElementTree as ET
+
+          def version(xml):
+              return ET.fromstring(xml).findtext("{http://maven.apache.org/POM/4.0.0}version")
+
+          with open("pom.xml", "rb") as pom:
+              current = version(pom.read())
+          if not current or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+", current):
+              raise SystemExit("Version must use Minecraft-plugin format, e.g. 26.1.2-1.1")
+
+          before = os.environ.get("BEFORE", "")
+          previous = None
+          if os.environ["EVENT_NAME"] == "push" and before and set(before) != {"0"}:
+              previous = version(subprocess.check_output(["git", "show", f"{before}:pom.xml"]))
+          changed = current != previous
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"version={current}\nchanged={str(changed).lower()}\n")
+          print(f"Project version: {previous} -> {current}; release required: {changed}")
+          PY
+
+  release:
+    needs: version
+    if: needs.version.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    concurrency:
+      group: plugin-release-${{ needs.version.outputs.version }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Test and package
+        run: mvn --batch-mode --no-transfer-progress clean verify
+      - name: Verify release JAR
+        run: |
+          python3 - <<'PY'
+          import os
+          import zipfile
+
+          version = os.environ["VERSION"]
+          path = f"target/TGCPlugin-{version}.jar"
+          with zipfile.ZipFile(path) as jar:
+              metadata = jar.read("plugin.yml").decode("utf-8")
+              assert f"version: '{version}'" in metadata, "Packaged plugin version differs from pom.xml"
+              assert f"api-version: {version.split('-')[0]}" in metadata, "Minecraft API version must match the version prefix"
+              assert "com/thegreatchicken/TGCPlugin/PluginLoader.class" in jar.namelist(), "Missing plugin entrypoint"
+          print(f"Verified {path}")
+          PY
+      - name: Publish GitHub release with JAR asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          asset="target/TGCPlugin-$VERSION.jar"
+          name="$(basename "$asset")"
+
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            test "$(git rev-list -n 1 "$tag")" = "$GITHUB_SHA" || {
+              echo "::error::Tag $tag already points to another commit. Bump the version."
+              exit 1
+            }
+          fi
+
+          status="$(curl --silent --show-error --retry 3 --header "Authorization: Bearer $GH_TOKEN" --header "Accept: application/vnd.github+json" --output "$RUNNER_TEMP/release.json" --write-out '%{http_code}' "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$tag")"
+          case "$status" in
+            404)
+              gh release create "$tag" --target "$GITHUB_SHA" --title "TGCPlugin $VERSION" --generate-notes --draft
+              ;;
+            200)
+              if jq -e '.draft == false' "$RUNNER_TEMP/release.json" > /dev/null; then
+                test "$(gh api "repos/$GITHUB_REPOSITORY/commits/$tag" --jq .sha)" = "$GITHUB_SHA"
+                jq -e --arg name "$name" '.assets | any(.name == $name and .size > 0)' "$RUNNER_TEMP/release.json" > /dev/null
+                echo "Release $tag already published with $name; leaving it unchanged."
+                exit 0
+              fi
+              jq -e --arg sha "$GITHUB_SHA" '.target_commitish == $sha' "$RUNNER_TEMP/release.json" > /dev/null
+              ;;
+            *)
+              echo "::error::Cannot inspect release $tag (HTTP $status)."
+              exit 1
+              ;;
+          esac
+
+          # A failed upload leaves a draft that a rerun can finish. Published assets are never replaced.
+          gh release upload "$tag" "$asset" --clobber
+          gh release edit "$tag" --draft=false --prerelease=false
