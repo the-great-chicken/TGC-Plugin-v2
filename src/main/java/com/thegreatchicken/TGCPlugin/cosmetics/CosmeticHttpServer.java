@@ -89,7 +89,7 @@ public final class CosmeticHttpServer implements AutoCloseable {
             String path = exchange.getRequestURI().getPath();
             String method = exchange.getRequestMethod();
             if (path.equals("/v1/catalogue") && method.equals("GET")) {
-                respond(exchange, 200, Map.of("protocolVersion", 1, "catalogue", catalogues.get().entries()));
+                respond(exchange, 200, Map.of("protocolVersion", 2, "catalogue", catalogues.get().entries()));
                 return;
             }
             boolean mutate = path.equals("/v1/equipment") && method.equals("PUT");

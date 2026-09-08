@@ -77,7 +77,7 @@ class CosmeticHttpServerTest {
         var service = new CosmeticService(catalogues, fixture.game, fixture.clock);
         try (var server = new CosmeticHttpServer(new InetSocketAddress("127.0.0.1", 0), secret,
                 catalogues, service, gameThread::submit, Logger.getAnonymousLogger())) {
-            fixture.catalogue = new CosmeticCatalogue(List.of(new CosmeticCatalogue.Cosmetic("particle.spark", "particle", "Étincelle", 0)));
+            fixture.catalogue = new CosmeticCatalogue(List.of(new CosmeticCatalogue.Cosmetic("particle.spark", "particle", "Étincelle", "#ffffff", 0)));
             catalogues.reload();
             var response = send(server, "/v1/catalogue", "GET", "", secret);
             assertEquals(200, response.statusCode());

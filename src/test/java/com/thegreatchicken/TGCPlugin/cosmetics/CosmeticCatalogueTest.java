@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class CosmeticCatalogueTest {
     @TempDir Path pack;
-    static final String CLOUD = "scoreboard objectives add sgp.particle.cloud_unlocked dummy \"Nuage\"";
+    static final String CLOUD = "scoreboard objectives add sgp.particle.cloud_unlocked dummy {text:\"Nuage\",color:\"#ffffff\"}";
 
     void write(String relative, String source) throws IOException {
         Path path = pack.resolve("data/sgp.cosmetics/function").resolve(relative);
@@ -27,12 +27,13 @@ class CosmeticCatalogueTest {
         for (String id : ids) write("api/equip/" + id.replace('.', '/') + ".mcfunction", "return 1\n");
     }
     @Test void readsDatapackNamesAndPerCategoryDeclarationOrder() throws IOException {
-        setup(CLOUD + "\nscoreboard objectives add sgp.kill.anvil_unlocked dummy \"Enclume\"\n"
-                + "scoreboard objectives add sgp.particle.smoke_unlocked dummy \"Fumée \\\"douce\\\"\"\n"
+        setup(CLOUD + "\nscoreboard objectives add sgp.kill.anvil_unlocked dummy {text:\"Enclume\",color:\"#aaaaaa\"}\n"
+                + "scoreboard objectives add sgp.particle.smoke_unlocked dummy {text:\"Fumée \\\"douce\\\"\",color:\"#555555\"}\n"
                 + "scoreboard objectives add sgp.death_effect deathCount\n", "particle.cloud", "kill.anvil", "particle.smoke");
         var catalogue = CosmeticCatalogue.load(pack);
         assertEquals(3, catalogue.entries().size());
         assertEquals("Fumée \"douce\"", catalogue.get("particle.smoke").name());
+        assertEquals("#555555", catalogue.get("particle.smoke").color());
         assertEquals(1, catalogue.get("particle.smoke").sortOrder());
         assertEquals(0, catalogue.get("kill.anvil").sortOrder());
         assertEquals("sgp.particle.smoke_unlocked", catalogue.get("particle.smoke").objective());
@@ -54,6 +55,14 @@ class CosmeticCatalogueTest {
         }
         write("initialization.mcfunction", CLOUD.replace("cloud_unlocked", "cloud;kill_unlocked"));
         assertThrows(IOException.class, () -> CosmeticCatalogue.load(pack));
+    }
+    @Test void rejectsMissingInvalidAndNonliteralColors() throws IOException {
+        setup(CLOUD, "particle.cloud");
+        for (String component : List.of("{text:\"Nuage\"}", "{text:\"Nuage\",color:42}", "{text:\"Nuage\",color:\"red\"}",
+                "{text:\"Nuage\",color:\"url(bad)\"}", "{text:\"Nuage\",color:\"#ffffff\",extra:[]}")) {
+            write("initialization.mcfunction", CLOUD.substring(0, CLOUD.indexOf('{')) + component);
+            assertThrows(Exception.class, () -> CosmeticCatalogue.load(pack));
+        }
     }
     @Test void reloadPublishesNewMetadataAndRecoversFromInvalidOrDisabledPack() throws IOException {
         setup(CLOUD, "particle.cloud");

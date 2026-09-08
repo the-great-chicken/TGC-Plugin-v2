@@ -9,9 +9,9 @@ class CosmeticServiceTest {
     final UUID player = UUID.fromString("11111111-1111-4111-8111-111111111111");
     final CosmeticService.Identity identity = new CosmeticService.Identity("111111111111111111", player);
     CosmeticCatalogue catalogue = new CosmeticCatalogue(List.of(
-            new CosmeticCatalogue.Cosmetic("particle.cloud", "particle", "Nuage", 0),
-            new CosmeticCatalogue.Cosmetic("particle.smoke", "particle", "Fumée", 1),
-            new CosmeticCatalogue.Cosmetic("kill.anvil", "kill", "Enclume", 0)));
+            new CosmeticCatalogue.Cosmetic("particle.cloud", "particle", "Nuage", "#ffffff", 0),
+            new CosmeticCatalogue.Cosmetic("particle.smoke", "particle", "Fumée", "#ffffff", 1),
+            new CosmeticCatalogue.Cosmetic("kill.anvil", "kill", "Enclume", "#ffffff", 0)));
     final MutableClock clock = new MutableClock();
     final FakeGame game = new FakeGame();
     final CosmeticService service = new CosmeticService(() -> catalogue, game, clock);
@@ -111,8 +111,8 @@ class CosmeticServiceTest {
         var cloud = change("particle", "particle.cloud");
         service.change(cloud);
         catalogue = new CosmeticCatalogue(List.of(
-                new CosmeticCatalogue.Cosmetic("particle.cloud", "particle", "Nouveau nuage", 0),
-                new CosmeticCatalogue.Cosmetic("particle.spark", "particle", "Étincelle", 1)));
+                new CosmeticCatalogue.Cosmetic("particle.cloud", "particle", "Nouveau nuage", "#ffffff", 0),
+                new CosmeticCatalogue.Cosmetic("particle.spark", "particle", "Étincelle", "#ffffff", 1)));
         game.unlocked.remove("particle.smoke");
         game.unlocked.add("particle.spark");
         assertEquals("Nouveau nuage", service.state(identity).catalogue().getFirst().name());
@@ -120,7 +120,7 @@ class CosmeticServiceTest {
         assertEquals("particle.spark", service.change(cloud).equipment().get("particle"));
         assertEquals(2, game.applies, "Reload keeps request receipts, so an old request cannot restore equipment");
         error("INVALID_COSMETIC", () -> service.change(change("particle", "particle.smoke")));
-        catalogue = new CosmeticCatalogue(List.of(new CosmeticCatalogue.Cosmetic("particle.cloud", "particle", "Nuage", 0)));
+        catalogue = new CosmeticCatalogue(List.of(new CosmeticCatalogue.Cosmetic("particle.cloud", "particle", "Nuage", "#ffffff", 0)));
         game.unlocked.remove("particle.spark");
         var state = service.state(identity);
         assertNull(state.equipment().get("particle"));

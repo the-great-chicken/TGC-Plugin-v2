@@ -54,7 +54,7 @@ public final class CosmeticService {
         tags.stream().filter(tag -> CATEGORIES.stream().anyMatch(c -> tag.startsWith("sgp." + c + ".")))
                 .filter(tag -> catalogue.get(tag.substring(4)) == null).sorted()
                 .forEach(tag -> issues.add("unknown:" + tag.substring(4)));
-        return new State(1, identity.playerUuid(), clock.millis(), catalogue.entries(),
+        return new State(2, identity.playerUuid(), clock.millis(), catalogue.entries(),
                 unlocked, Collections.unmodifiableMap(equipment), List.copyOf(issues));
     }
     public State change(Change change) {

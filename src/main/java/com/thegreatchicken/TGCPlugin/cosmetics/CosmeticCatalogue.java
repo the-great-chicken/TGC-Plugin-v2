@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public final class CosmeticCatalogue {
     public static final List<String> CATEGORIES = List.of("particle", "intensity", "kill");
-    public record Cosmetic(String id, String category, String name, int sortOrder) {
+    public record Cosmetic(String id, String category, String name, String color, int sortOrder) {
         public String tag() { return "sgp." + id; }
         public String objective() { return tag() + "_unlocked"; }
         public String equipFunction() { return "sgp.cosmetics:api/equip/" + id.replace('.', '/'); }
@@ -17,7 +17,7 @@ public final class CosmeticCatalogue {
     private final List<Cosmetic> entries;
     private final Map<String, Cosmetic> byId = new HashMap<>();
     private static final Pattern OBJECTIVE = Pattern.compile(
-            "scoreboard\\s+objectives\\s+add\\s+sgp\\.((particle|intensity|kill)\\.[a-z_]+)_unlocked\\s+dummy\\s+(\"(?:[^\"\\\\]|\\\\.)*\")");
+            "scoreboard\\s+objectives\\s+add\\s+sgp\\.((particle|intensity|kill)\\.[a-z_]+)_unlocked\\s+dummy\\s+(\\{.*})");
 
     public CosmeticCatalogue(List<Cosmetic> entries) {
         if (entries.isEmpty() || entries.size() > 128) throw new IllegalArgumentException("Expected 1–128 cosmetics");
@@ -25,6 +25,7 @@ public final class CosmeticCatalogue {
         for (Cosmetic entry : entries) {
             if (!CATEGORIES.contains(entry.category()) || !entry.id().matches(entry.category() + "\\.[a-z_]+")
                     || entry.name() == null || entry.name().isBlank() || entry.name().length() > 100
+                    || entry.color() == null || !entry.color().matches("#[0-9a-fA-F]{6}")
                     || entry.sortOrder() < 0 || byId.put(entry.id(), entry) != null) {
                 throw new IllegalArgumentException("Invalid cosmetic catalogue");
             }
@@ -39,10 +40,16 @@ public final class CosmeticCatalogue {
             String command = line.strip();
             if (!command.matches("scoreboard\\s+objectives\\s+add\\s+sgp\\.(particle|intensity|kill)\\..*")) continue;
             var match = OBJECTIVE.matcher(command);
-            if (!match.matches()) throw new IOException("Expected a cosmetic unlock objective with a quoted display name: " + command);
+            if (!match.matches()) throw new IOException("Expected a cosmetic unlock objective with a text/color component: " + command);
             String category = match.group(2);
             try {
-                entries.add(new Cosmetic(match.group(1), category, JsonParser.parseString(match.group(3)).getAsString(),
+                var display = JsonParser.parseString(match.group(3)).getAsJsonObject();
+                if (!display.keySet().equals(Set.of("text", "color"))
+                        || !display.get("text").isJsonPrimitive() || !display.get("text").getAsJsonPrimitive().isString()
+                        || !display.get("color").isJsonPrimitive() || !display.get("color").getAsJsonPrimitive().isString()) {
+                    throw new IOException("Cosmetic display components require literal text and a hex color: " + match.group(1));
+                }
+                entries.add(new Cosmetic(match.group(1), category, display.get("text").getAsString(), display.get("color").getAsString(),
                         order.merge(category, 1, Integer::sum) - 1));
             } catch (com.google.gson.JsonParseException e) {
                 throw new IOException("Invalid cosmetic display name: " + match.group(1), e);
